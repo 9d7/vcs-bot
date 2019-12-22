@@ -1,5 +1,5 @@
 from discord.ext import commands
-from cogs.help import HelpCog
+from src.cogs.help import HelpCog
 import os
 def main():
   bot = commands.Bot(command_prefix="!")
