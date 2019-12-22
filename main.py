@@ -5,7 +5,7 @@ def main():
   bot = commands.Bot(command_prefix="!")
   bot.remove_command('help')
 
-  bot.add_cog(HelpCog('help.yaml', bot))
+  bot.add_cog(HelpCog('data/help.yaml', bot))
 
   bot.run(os.environ['DISCORD_KEY'])
 
