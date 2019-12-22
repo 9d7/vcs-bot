@@ -1,0 +1,183 @@
+# Configures help messages.
+# Designed to be as straightforward as possible,
+# so adding new messages isn't a pain.
+# Even though it's likely not going to change,
+
+meta:
+  footer: Type '!help [command]' to get information about a certain command.
+  title: Help
+  description-tag: Description
+  usage-tag: Usage
+
+  errors:
+    no-base-command: '**Error**: Command `{}` does not exist.'
+    no-subcommand: '**Error**: Subcommand `{}` does not exist for command `{}`.'
+
+
+help:
+  brief: Displays this message
+  description: Displays help about certain commands.
+  usage: '[command]'
+
+parrot:
+  brief: Says something when triggered
+  description: Creates a parrot, which will tell the bot
+    to respond with a message (or a random choice from a set of messages)
+    when a user says a certain trigger phrase.
+
+  create:
+    brief: Adds a new parrot to the list
+    usage: <trigger> <response1> [response2]...
+    description: Appends to the parrot with trigger <trigger>. If no parrot
+      with that trigger is found, a new parrot is created with those responses.
+
+  remove:
+    brief: Deletes a parrot
+    usage: <trigger>
+    description: Deletes the parrot with trigger <trigger>. If this is called
+      on an alias, the alias will be deleted, but not the whole parrot.
+
+  view:
+    brief: Shows information about parrots
+    usage: '[trigger]'
+    description: Shows information about parrots. If trigger is provided,
+      this will show the possible responses for said trigger. Otherwise,
+      this will list all parrots by their triggers.
+
+  alias:
+    brief: Aliases a parrot
+    usage: <trigger> <alias>
+    description: Creates an alias to <trigger>. When either <trigger> or
+      <alias> is called, the parrot will trigger.
+
+  toggle:
+    brief: Toggles a parrot
+    usage: <trigger>
+    description: Enables or disables a parrot.
+
+  response:
+    brief: Deal with responses
+    description: These commands deal with the possible responses a parrot
+      can reply with.
+    add:
+      brief: Adds a response
+      usage: <trigger> <response>
+      description: Adds a response.
+
+    remove:
+      brief: Removes a response
+      usage: <trigger> <response>
+      description: Removes a response. If all responses are removed, the parrot
+        itself is removed.
+
+nick:
+  brief: Sets nicknames
+  description: "Sets and resets your nickname and the
+    nicknames of others.
+    When called with no arguments, resets your nickname.
+    When called with one, sets your nickname.
+    When called with two, sets <user>'s nickname."
+  usage:
+    - ""
+    - "<nick>"
+    - "<user> <nick>"
+
+poll:
+  brief: Creates and modifies polls
+  description: Various commands dealing with the creation, editing, and viewing
+    of polls.
+
+  create:
+    brief: Creates a poll
+    description: Creates a poll. When no options are specified, the poll
+      options default to yes, no, and maybe.
+    usage:
+      - "<question>"
+      - "<question> <option 1> [option 2]..."
+
+  append:
+    brief: Appends an option to the poll
+    description: Adds a new option to poll <id>. You do not need to be the
+      creator of this poll to add new options.
+    usage: "<id> <option>"
+
+  list:
+    brief: Lists the most recent polls
+    description: Lists polls in reverse chronological order. By default, the
+      ten most recent polls are shown, but earlier polls can be viewed by
+      specifying a zero-indexed page number.
+    usage: '[page]'
+
+  remove:
+    brief: Deletes a poll
+    description: Deletes a poll from the list. You must have created the poll
+      in order to delete it.
+    usage: <id>
+
+  revive:
+    brief: Revives a poll
+    description: Shows a previously-made poll in the chat so users can re-cast
+      their votes in case it gets buried. Note that due to restrictions with
+      discord, the reactions at the bottom reset, but votes will only be changed
+      if the user re-casts them.
+    usage: <id>
+
+  view:
+    brief: Shows poll results
+    description: Prints the results of the poll, as well as some metadata. As
+      opposed to revive, this does not let users change their votes.
+
+  purge:
+    brief: Removes unused poll options
+    description: Removes all added poll options that have no votes. If the
+      force option is used, it also removes all poll options that were only
+      voted for by their creator.
+
+      Note that options created originally by the poll owner will not be
+      deleted.
+    usage:
+      - <id>
+      - <id> force
+
+
+role:
+  brief: Creates and edits custom roles
+  description: Commands pertaining to custom roles. These can be created or
+    removed, and anybody can be added to said roles. This is implemented so
+    that certain groups can be mentioned without alerting everybody (e.g.
+    "@web i'm outside, let me in")
+
+  create:
+    brief: Creates a new role
+    description: Creates a role with name <name>. Upon creation, nobody is in
+      the role.
+
+  join:
+    brief: Adds a user to a role
+    usage: '[user] <role>'
+    description: Joins you or someone else to a role. When [user] is not
+     specified, you are joined to said role.
+
+  leave:
+    brief: Kicks somebody from a role
+    usage: '[user] <role>'
+    description: Kicks you or someone else out of a role. When [user] is not
+      specified, you are kicked from said role.
+
+  list:
+    brief: Lists all roles
+    description: Lists all roles.
+
+  remove:
+    brief: Removes a role
+    description: Removes a role.
+    usage: <role>
+
+color:
+  brief: Sets your color
+  description: Sets the color of your name. Hex values or default color names
+    are allowed.
+  usage:
+    - <color name>
+    - '#RRGGBB'
+    - RRGGBB
