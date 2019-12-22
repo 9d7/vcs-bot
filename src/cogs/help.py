@@ -22,7 +22,7 @@ class HelpCog(commands.Cog):
         inline=True
       )
 
-      embed.set_footer()
+      embed.set_footer(text=self.help_text['meta']['footer'])
 
     return embed
 
@@ -102,6 +102,8 @@ class HelpCog(commands.Cog):
       embed.add_field(name=self.help_text['meta']['usage-tag'],
                       value=usage,
                       inline=False)
+      embed.set_footer(text=self.help_text['meta']['footer'])
+
     else:
       # add subcommands as fields
       for key in filtered_keys:
