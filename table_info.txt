@@ -1,0 +1,29 @@
+POLLS
+  PollID     serial
+  Question   varchar(255)
+  Username   char(16)
+  Time       timestamp
+  LastUpdate timestamp
+  Message    char(16)
+  Channel    char(16)
+
+OPTIONS
+  OptionID  serial
+  PollID    int
+  Original  bool
+  Username  char(16)
+  Emoji     char(8)
+  Option    varchar(255)
+
+VOTES
+  Username  char(16)
+  OptionID  int
+
+get all options:
+SELECT * FROM Options WHERE poll_id=x
+
+get all votes:
+SELECT * FROM Votes WHERE option_id=x
+
+get vote times:
+SELECT time FROM Votes WHERE poll_id=x

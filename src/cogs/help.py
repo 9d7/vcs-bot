@@ -29,20 +29,12 @@ class HelpCog(commands.Cog):
 
   def __init__(self, help_file: str, bot: commands.Bot):
 
-    print("Hi")
     yaml = YAML(typ='safe')
     with open(help_file, 'r') as help:
       self.help_text = yaml.load(help)
 
     self.bot = bot
     self.base_help_msg = self._get_base_help_msg()
-
-
-  @commands.Cog.listener()
-  async def on_message_edit(self, before: discord.Message, after: discord.Message):
-    if len(before.embeds) > len(after.embeds):
-      print(after)
-      await after.edit(embed=before.embeds[0], suppress=False)
 
   @commands.command()
   async def help(self, ctx: commands.context, *args):
