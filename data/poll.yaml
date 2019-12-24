@@ -1,1 +1,3 @@
 # Error text for polls
+command-not-found: Poll subcommand invalid.
+  Type !help poll for a list of valid subcommands.

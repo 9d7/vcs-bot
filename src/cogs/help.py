@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from ruamel.yaml import YAML
-
+from src.base import *
 
 class HelpCog(commands.Cog):
 
@@ -36,7 +36,9 @@ class HelpCog(commands.Cog):
     self.bot = bot
     self.base_help_msg = self._get_base_help_msg()
 
+
   @commands.command()
+  @delete_source
   async def help(self, ctx: commands.context, *args):
     if len(args) == 0:
       await ctx.send(embed=self.base_help_msg)
@@ -47,10 +49,11 @@ class HelpCog(commands.Cog):
       if val not in text:
         if i == 0:
           format_msg = self.help_text['meta']['errors']['no-base-command']
-          await ctx.send(format_msg.format("!" + val))
+          await send(ctx, format_msg.format("!" + val), tag=True, expire=True)
         else:
           format_msg = self.help_text['meta']['errors']['no-subcommand']
-          await ctx.send(format_msg.format(val, "!" + " ".join(args[:i])))
+          await send(ctx, format_msg.format(val, "!" + " ".join(args[:i])),
+                     tag=True, expire=True)
         return
 
       text = text[val]
