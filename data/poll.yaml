@@ -1,3 +1,48 @@
-# Error text for polls
-command-not-found: Poll subcommand invalid.
-  Type !help poll for a list of valid subcommands.
+# text for polls
+default_poll:
+  options:
+    - Yes
+    - Maybe
+    - No
+  emojis:
+    - 0001F44D
+    - 0001F937
+    - 0001F44E
+
+emojis:
+  - 0001F1E6
+  - 0001F1E7
+  - 0001F1E8
+  - 0001F1E9
+  - 0001F1EA
+  - 0001F1EB
+  - 0001F1EC
+  - 0001F1ED
+  - 0001F1EE
+  - 0001F1EF
+  - 0001F1F0
+  - 0001F1F1
+  - 0001F1F2
+  - 0001F1F3
+  - 0001F1F4
+  - 0001F1F5
+  - 0001F1F6
+  - 0001F1F7
+  - 0001F1F8
+  - 0001F1F9
+
+style:
+  poll-header: __**Poll**__ (id \#{}) __**from {}**__
+  question-string: "**Question**: {}"
+  option-string: "`{} {}` {}: *{}* - {}"
+
+  # there's no chance of this ever being i18n-ed, but
+  # the option is still there.
+  vote-singular: vote
+  vote-plural: votes
+
+errors:
+  command-not-found: Poll subcommand invalid.
+    Type !help poll for a list of valid subcommands.
+  wrong-arg-length: You've entered the wrong number of arguments.
+    Type !help poll for help with command syntax.
