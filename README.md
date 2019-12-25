@@ -19,4 +19,5 @@ Eventually, when the bot is closer to being finished, I'll write a little descri
 ## Dependencies
 - [discord.py](https://pypi.org/project/discord.py/)
 - [ruamel.yaml](https://pypi.org/project/ruamel.yaml/)
-- [python-box](https://pypi.org/project/python-box/)
+- [python-box](https://pypi.org/project/python-box/) *possibly*
+- [psycopg2](https://pypi.org/project/psycopg2-binary/)
