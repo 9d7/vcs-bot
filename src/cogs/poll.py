@@ -19,12 +19,14 @@ class PollCog(commands.Cog):
   @delete_source
   async def poll(self, ctx: commands.context):
     if ctx.invoked_subcommand is None:
-      await send(ctx, self.messages['command-not-found'], tag=True, expire=True)
+      await send(ctx, self.messages['errors']['command-not-found'],
+                 tag=True, expire=True)
 
   @poll.command()
   async def create(self, ctx: commands.context, *args):
     if len(args) == 0:
-      await send(ctx, self.messages['wrong-arg-length'], tag=True, expire=True)
+      await send(ctx, self.messages['errors']['wrong-arg-length'],
+                 tag=True, expire=True)
       return
     elif len(args) == 1:
       await send(ctx, "aaaaa", tag=True, expire=True)
