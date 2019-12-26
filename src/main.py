@@ -12,7 +12,7 @@ def main():
   conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
   conn.set_session(readonly=False, autocommit=True)
 
-  bot.add_cog(PollCog('data/poll.yaml', cursor=conn.cursor(), bot=bot))
+  bot.add_cog(PollCog('data/poll.yaml', conn=conn, bot=bot))
 
   bot.run(os.environ['DISCORD_KEY'])
 

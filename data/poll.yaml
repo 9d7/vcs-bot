@@ -32,14 +32,26 @@ emojis:
   - 0001F1F9
 
 style:
+  # 1. id
+  # 2. creator
   poll-header: __**Poll**__ (id \#{}) __**from {}**__
+
+  # 1. question
   question-string: "**Question**: {}"
+
+  # 1. num_votes
+  # 2. "vote"/"votes"
+  # 3. emoji
+  # 4. option
+  # 5. voter names
   option-string: "`{} {}` {}: *{}* - {}"
 
   # there's no chance of this ever being i18n-ed, but
   # the option is still there.
-  vote-singular: vote
+  vote-singular: "vote "
   vote-plural: votes
+
+  no-votes: "Nobody :("
 
 messages:
   loading: Loading poll...
@@ -55,3 +67,13 @@ errors:
     Please limit each option to 255 characters.
   option-too-long: The option you've entered is too long. Please limit
     your option to 255 characters.
+  critical-database-issue: This message should never appear. If it does,
+    tell Eric.
+  # PollID not in database when it *ABSOLUTELY* should be.
+  # separate from an invalid ID error because that's a user error.
+  # this is a "never should happen" server error.
+  poll-not-found-critical: Poll not found in database. Tell Eric.
+
+  poll-not-found: Invalid ID. Use !poll view to see the poll ID of
+
+  options-not-found: Options not found in database. Tell Eric.
