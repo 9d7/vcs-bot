@@ -23,59 +23,38 @@ class PollCog(commands.Cog):
     cursor = self.conn.cursor()
 
     # get poll info
-    cursor.execute("SELECT Question, Username FROM Polls "
-                   "WHERE PollID=%s;", (poll_id,))
+    poll_info = sql_request(cursor,
+                            "SELECT Question, Username FROM Polls "
+                            "WHERE PollID=%s;",
+                            (poll_id,))[0]
 
-    try:
-      cursor_ret = cursor.fetchone()
-
-      # get poll string of nonexistent poll. should never happen
-      if not cursor_ret:
-        return errors["poll-not-found-critical"]
-
-      question, user = cursor_ret
-
-    except psycopg2.ProgrammingError:
-      return errors["critical-database-issue"]
-
-    username = guild.get_member(user_id=int(user, base=16)).display_name
+    username = \
+      guild.get_member(user_id=int(poll_info.username, base=16)).display_name
 
     # get option info
-    cursor.execute("SELECT OptionID, Emoji, Option FROM Options "
-                   "WHERE PollID = %s;", (poll_id,))
+    options = sql_request(cursor,
+                          "SELECT OptionID, Emoji, Option FROM Options "
+                          "WHERE PollID = %s;", (poll_id,))
 
-    try:
-      # wrap into dictionaries for readability
-      option_desc = [field.name for field in cursor.description]
-      options = [dict(zip(option_desc, option)) for option in cursor.fetchall()]
-
-      if options == []:
-        return errors["options-not-found"]
-
-    except psycopg2.ProgrammingError:
-      return errors["critical-database-issue"]
+    print(options)
 
     # format strings
     header_string = style["poll-header"].format(poll_id,
                                                 username)
-    question_string = style["question-string"].format(question)
+    question_string = style["question-string"].format(poll_info.question)
 
     option_strings = []
 
     # get option readout
     for option in options:
-      emoji = chr(int(option['emoji'], base=16))
 
+      emoji = chr(int(option.emoji, base=16))
 
       # get votes
-      cursor.execute("SELECT DISTINCT Username FROM Votes "
-                     "WHERE OptionID=%s;", (option["optionid"],))
-      try:
-        all = cursor.fetchall()
-        users = [i[0] for i in cursor.fetchall()]
-
-      except psycopg2.ProgrammingError:
-        return errors["critical-database-issue"]
+      users = sql_request(cursor,
+                          "SELECT DISTINCT Username FROM Votes "
+                          "WHERE OptionID=%s;",
+                          (option.optionid,))
 
       all_votes = ", ".join(
         guild.get_member(user_id=int(voter_id, 16)).display_name
@@ -92,7 +71,7 @@ class PollCog(commands.Cog):
         vote_str = style["vote-singular"]
 
       final_string = style["option-string"].format(
-        vote_count, vote_str, emoji, option["option"], all_votes)
+        vote_count, vote_str, emoji, option.option, all_votes)
 
       option_strings.append(final_string)
 
@@ -101,6 +80,34 @@ class PollCog(commands.Cog):
 
   def snowflake_to_str(self, flake: int):
     return "{0:016X}".format(flake)
+
+  ### REACTION HANDLERS
+  ### Using on_raw_reaction_x here instead of on_reaction_x so that the bot
+  ### will still process polls after a restart, when the internal cache is
+  ### cleared.
+  @commands.Cog.listener()
+  async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    guild = self.bot.get_guild(payload.guild_id)
+    channel = guild.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    user = guild.get_member(payload.user_id)
+
+    if (user == self.bot.user): return
+
+    cursor = self.conn.cursor()
+
+    # get poll
+    cursor.execute("SELECT PollID FROM Polls WHERE Message=%s AND Channel=%s;",
+                   (self.snowflake_to_str(payload.message_id),
+                    self.snowflake_to_str(payload.channel_id)))
+
+    try:
+      poll = cursor.fetchone()
+      if not poll: return
+    except psycopg2.ProgrammingError:
+      await channel.send(content=
+                         self.messages["errors"]["critical-database-issue"])
+      return
 
   @commands.group()
   @delete_source
@@ -175,3 +182,14 @@ class PollCog(commands.Cog):
   @poll.command()
   async def purge(self, ctx: commands.context, *args):
     pass
+
+  # TODO: Remove this when done
+  @poll.command()
+  async def reset(self, ctx: commands.context, *args):
+    cursor = self.conn.cursor()
+
+    cursor.execute("DELETE FROM Polls; "
+                   "DELETE FROM Options;"
+                   "DELETE FROM Votes;"
+                   "ALTER SEQUENCE Polls_PollID_seq RESTART;"
+                   "ALTER SEQUENCE Options_OptionID_seq RESTART;")
