@@ -41,8 +41,17 @@ style:
   vote-singular: vote
   vote-plural: votes
 
+messages:
+  loading: Loading poll...
+
 errors:
   command-not-found: Poll subcommand invalid.
     Type !help poll for a list of valid subcommands.
   wrong-arg-length: You've entered the wrong number of arguments.
     Type !help poll for help with command syntax.
+  question-too-long: The question you've entered is too long. Please
+    limit your question to 255 characters.
+  options-too-long: One of the options you've entered is too long.
+    Please limit each option to 255 characters.
+  option-too-long: The option you've entered is too long. Please limit
+    your option to 255 characters.
