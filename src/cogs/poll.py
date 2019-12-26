@@ -15,6 +15,18 @@ class PollCog(commands.Cog):
     with open(poll_file, 'r') as msg_file:
       self.messages = YAML(typ='safe').load(msg_file)
 
+  def emoji_to_str(self, flake: str):
+    return "{0:08X}".format(ord(flake))
+
+  def str_to_emoji(self, emoji: str):
+    return chr(int(emoji, base=16))
+
+  def snowflake_to_str(self, flake: int):
+    return "{0:016X}".format(flake)
+
+  def str_to_snowflake(self, flake: str):
+    return int(flake, 16)
+
   def get_poll_string(self, guild: discord.Guild, poll_id):
 
     style = self.messages["style"]
@@ -28,15 +40,13 @@ class PollCog(commands.Cog):
                             "WHERE PollID=%s;",
                             (poll_id,))[0]
 
-    username = \
-      guild.get_member(user_id=int(poll_info.username, base=16)).display_name
+    username = guild.get_member(
+      user_id=self.str_to_snowflake(poll_info.username)).display_name
 
     # get option info
     options = sql_request(cursor,
                           "SELECT OptionID, Emoji, Option FROM Options "
                           "WHERE PollID = %s;", (poll_id,))
-
-    print(options)
 
     # format strings
     header_string = style["poll-header"].format(poll_id,
@@ -48,7 +58,7 @@ class PollCog(commands.Cog):
     # get option readout
     for option in options:
 
-      emoji = chr(int(option.emoji, base=16))
+      emoji = self.str_to_emoji(option.emoji)
 
       # get votes
       users = sql_request(cursor,
@@ -57,7 +67,7 @@ class PollCog(commands.Cog):
                           (option.optionid,))
 
       all_votes = ", ".join(
-        guild.get_member(user_id=int(voter_id, 16)).display_name
+        guild.get_member(user_id=self.str_to_snowflake(voter_id)).display_name
         for voter_id in users)
 
       if all_votes == "":
@@ -78,15 +88,11 @@ class PollCog(commands.Cog):
     # join string together :)
     return "\n".join([header_string, question_string, *option_strings])
 
-  def snowflake_to_str(self, flake: int):
-    return "{0:016X}".format(flake)
-
   ### REACTION HANDLERS
   ### Using on_raw_reaction_x here instead of on_reaction_x so that the bot
   ### will still process polls after a restart, when the internal cache is
   ### cleared.
-  @commands.Cog.listener()
-  async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+  async def on_reaction(self, payload: discord.RawReactionActionEvent, add):
     guild = self.bot.get_guild(payload.guild_id)
     channel = guild.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
@@ -97,17 +103,64 @@ class PollCog(commands.Cog):
     cursor = self.conn.cursor()
 
     # get poll
-    cursor.execute("SELECT PollID FROM Polls WHERE Message=%s AND Channel=%s;",
-                   (self.snowflake_to_str(payload.message_id),
-                    self.snowflake_to_str(payload.channel_id)))
+    poll = sql_request(cursor,
+                       "UPDATE Polls SET LastUpdate=%s WHERE "
+                       "Message=%s AND Channel=%s RETURNING PollID;",
+                       (datetime.now(),
+                        self.snowflake_to_str(payload.message_id),
+                        self.snowflake_to_str(payload.channel_id)))
 
-    try:
-      poll = cursor.fetchone()
-      if not poll: return
-    except psycopg2.ProgrammingError:
-      await channel.send(content=
-                         self.messages["errors"]["critical-database-issue"])
+    # if a reaction was added to a non-poll, ignore it
+    if not poll:
       return
+    poll = poll[0]
+
+    # custom emojis are not allowed on polls
+    if not payload.emoji.is_unicode_emoji():
+      await message.remove_reaction(payload.emoji, user)
+      return
+
+    # neither are multi-codepoint emojis (sorry, country flags and skin tones)
+    if len(payload.emoji.name) > 1:
+      await message.remove_reaction(payload.emoji, user)
+      return
+
+    # get codepoint of emoji as string
+    emoji = self.emoji_to_str(payload.emoji.name)
+
+    # get option
+    option = sql_request(cursor,
+                         "SELECT OptionID FROM Options WHERE "
+                         "PollID=%s AND Emoji=%s;",
+                         (poll, emoji))
+
+    # emoji not a real option--remove it
+    if not option:
+      await message.remove_reaction(payload.emoji, user)
+      return
+    option = option[0]
+
+    # remove old vote
+    cursor.execute("DELETE FROM Votes WHERE "
+                   "Username=%s AND OptionID=%s;",
+                   (self.snowflake_to_str(payload.user_id), option))
+
+    # add new vote
+    if add:
+      cursor.execute("INSERT INTO Votes "
+                     "(Username, OptionID) VALUES (%s, %s)",
+                     (self.snowflake_to_str(payload.user_id), option))
+
+    await message.edit(content=self.get_poll_string(guild, poll))
+
+  @commands.Cog.listener()
+  async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    await self.on_reaction(payload, add=True)
+
+  @commands.Cog.listener()
+  async def on_raw_reaction_remove(self,
+                                   payload: discord.RawReactionActionEvent):
+    await self.on_reaction(payload, add=False)
 
   @commands.group()
   @delete_source
@@ -154,7 +207,7 @@ class PollCog(commands.Cog):
                      "(PollID, Original, Username, Emoji, Option) "
                      "VALUES (%s, %s, %s, %s, %s);",
                      (poll_id, True, user_flake, emoji, option))
-      await message.add_reaction(chr(int(emoji, 16)))
+      await message.add_reaction(self.str_to_emoji(emoji))
 
     message_string = self.get_poll_string(ctx.guild, poll_id)
 
@@ -189,7 +242,7 @@ class PollCog(commands.Cog):
     cursor = self.conn.cursor()
 
     cursor.execute("DELETE FROM Polls; "
-                   "DELETE FROM Options;"
-                   "DELETE FROM Votes;"
-                   "ALTER SEQUENCE Polls_PollID_seq RESTART;"
-                   "ALTER SEQUENCE Options_OptionID_seq RESTART;")
+                   "DELETE FROM Options; "
+                   "DELETE FROM Votes; "
+                   "ALTER SEQUENCE Polls_PollID_seq RESTART; "
+                   "ALTER SEQUENCE Options_OptionID_seq RESTART; ")
