@@ -48,10 +48,10 @@ class HelpCog(commands.Cog):
     for i, val in enumerate(args):
       if val not in text:
         if i == 0:
-          format_msg = self.help_text['meta']['errors']['no-base-command']
+          format_msg = self.help_text['meta']['errors']['no_base_command']
           await send(ctx, format_msg.format("!" + val), tag=True, expire=True)
         else:
-          format_msg = self.help_text['meta']['errors']['no-subcommand']
+          format_msg = self.help_text['meta']['errors']['no_subcommand']
           await send(ctx, format_msg.format(val, "!" + " ".join(args[:i])),
                      tag=True, expire=True)
         return
@@ -64,7 +64,7 @@ class HelpCog(commands.Cog):
 
     command_name = "!" + " ".join(args)
     embed.set_author(name=command_name)
-    embed.add_field(name=self.help_text['meta']['description-tag'],
+    embed.add_field(name=self.help_text['meta']['description_tag'],
                     value=text['description'],
                     inline=False)
 
@@ -94,7 +94,7 @@ class HelpCog(commands.Cog):
         usage = command_name + " " + usage
 
       # add usage as second field
-      embed.add_field(name=self.help_text['meta']['usage-tag'],
+      embed.add_field(name=self.help_text['meta']['usage_tag'],
                       value=usage,
                       inline=False)
       embed.set_footer(text=self.help_text['meta']['footer'])

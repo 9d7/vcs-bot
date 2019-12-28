@@ -6,12 +6,12 @@
 meta:
   footer: Type '!help [command]' to get information about a certain command.
   title: Help
-  description-tag: Description
-  usage-tag: Usage
+  description_tag: Description
+  usage_tag: Usage
 
   errors:
-    no-base-command: '**Error**: Command `{}` does not exist.'
-    no-subcommand: '**Error**: Subcommand `{}` does not exist for command `{}`.'
+    no_base_command: '**Error**: Command `{}` does not exist.'
+    no_subcommand: '**Error**: Subcommand `{}` does not exist for command `{}`.'
 
 
 help:

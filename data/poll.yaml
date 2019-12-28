@@ -34,55 +34,150 @@ emojis:
 style:
   # 1. id
   # 2. creator
-  poll-header: __**Poll**__ (id \#{}) __**from {}**__
+  poll_header: __**Poll**__ (id \#{}) __**from {}**__
 
   # 1. question
-  question-string: "**Question**: {}"
+  question_string: "**Question**: {}"
 
   # 1. num_votes
   # 2. "vote"/"votes"
   # 3. emoji
   # 4. option
   # 5. voter names
-  option-string: "`{} {}` {}: *{}* - {}"
+  option_string: "`{} {}` {}: *{}* - {}"
 
   # there's no chance of this ever being i18n-ed, but
   # the option is still there.
-  vote-singular: "vote "
-  vote-plural: votes
+  vote_singular: "vote "
+  vote_plural: votes
 
-  no-votes: "Nobody :("
+  no_votes: "Nobody :("
+
+  summary_string: "#{}: {} - *{}*"
 
 messages:
   loading: Loading poll...
 
 errors:
-  command-not-found: Poll subcommand invalid.
+  command_not_found: Poll subcommand invalid.
     Type !help poll for a list of valid subcommands.
-  wrong-arg-length: You've entered the wrong number of arguments.
+  wrong_arg_length: You've entered the wrong number of arguments.
     Type !help poll for help with command syntax.
   question-too-long: The question you've entered is too long. Please
     limit your question to 255 characters.
-  options-too-long: One of the options you've entered is too long.
+  options_too_long: One of the options you've entered is too long.
     Please limit each option to 80 characters.
-  option-too-long: The option you've entered is too long. Please limit
+  option_too_long: The option you've entered is too long. Please limit
     your option to 80 characters.
-  critical-database-issue: This message should never appear. If it does,
-    tell Eric.
   # PollID not in database when it *ABSOLUTELY* should be.
   # separate from an invalid ID error because that's a user error.
   # this is a "never should happen" server error.
-  poll-not-found-critical: Poll not found in database. Tell Eric.
+  poll_not_found_critical: Poll not found in database. Tell Eric.
 
-  poll-not-found: Invalid ID. Use !poll view to see the poll ID of recent polls.
+  poll_not_found: Invalid ID. Use !poll view to see the poll ID of recent polls.
 
-  options-not-found: Options not found in database. Tell Eric.
+  options_not_found: Options not found in database. Tell Eric.
 
-  too-many-options: The poll has too many options. Please remove some with
+  too_many_options: The poll has too many options. Please remove some with
     !poll purge before continuing.
-  poll-overflow: There's too much to display in this poll. Please use
+  poll_overflow: There's too much to display in this poll. Please use
     !poll purge to remove some extraneous options.
-  id-is-nan: <id> should be a number. Use !help poll for help with command
+  id_is_nan: <id> should be a number. Use !help poll for help with command
     syntax.
-  poll-deleted: The message or channel containing the poll was deleted. Please
+  poll_deleted: The message or channel containing the poll was deleted. Please
     revive the poll with !poll revive <id>.
+
+
+sql_requests:
+  reset: |
+    DROP TABLE IF EXISTS Polls;
+    DROP TABLE IF EXISTS Options;
+    DROP TABLE IF EXISTS Votes;
+
+    CREATE TABLE Polls (
+    PollID     serial,
+    Question   varchar(255),
+    Username   char(16),
+    Time       timestamp,
+    LastUpdate timestamp,
+    Message    char(16),
+    Channel    char(16));
+
+    CREATE TABLE Options (
+    OptionID  serial,
+    PollID    int,
+    Original  bool,
+    Username  char(16),
+    Emoji     char(8),
+    Option    varchar(255));
+
+    CREATE TABLE Votes (
+    Username  char(16),
+    OptionID  int);
+
+    DROP VIEW IF EXISTS OptionVotes;
+
+    CREATE OR REPLACE VIEW OptionVotes AS (
+    SELECT
+    MAX(O.PollID) AS PollID,
+    MAX(O.Option) AS Option,
+    COUNT(V.Username) AS VoteCount
+    FROM Options AS O
+    LEFT OUTER JOIN Votes AS V
+    ON O.OptionID=V.OptionID
+    GROUP BY O.OptionID);
+
+  readout: |
+    SELECT MAX(O.OptionID) AS OptionID,
+           MAX(Emoji) AS Emoji,
+           MAX(Option) AS Option,
+           COUNT(V.Username) AS VoteCount,
+           STRING_AGG(V.Username, ' ') AS Votes
+    FROM Options AS O
+    LEFT OUTER JOIN Votes AS V
+    ON O.OptionID=V.OptionID
+    WHERE O.PollID=1
+    GROUP BY O.OptionID
+    ORDER BY
+        COUNT(V.Username) DESC,
+        OptionID;
+
+  summary: |
+    SELECT MAX(P.PollID), MAX(P.Question),
+           (CASE
+                WHEN MAX(MV.VoteCount)=0 THEN %s
+                ELSE STRING_AGG(O.Option, ', ') END) AS Result
+    FROM (
+        SELECT Question,
+               PollID
+        FROM Polls
+        ORDER BY PollID DESC
+        OFFSET %s
+        LIMIT 10
+        ) AS P
+    INNER JOIN OptionVotes AS O ON P.PollID=O.PollID
+    INNER JOIN (
+        SELECT PollID,
+               MAX(VoteCount) AS VoteCount
+        FROM OptionVotes GROUP BY PollID
+        ) AS MV ON MV.PollID=P.PollID AND O.VoteCount=MV.VoteCount
+    GROUP BY O.PollID;
+
+  new_option: |
+    INSERT INTO
+        Options
+    (PollID, Original, Username, Emoji, Option)
+    VALUES (%s, %s, %s, %s, %s)
+
+  get_emojis: SELECT Emoji FROM Options WHERE PollID=%s;
+
+  get_message_channel: |
+    UPDATE Polls SET LastUpdate=%s
+    WHERE PollID=%s
+    RETURNING Message, Channel;
+
+  new_poll: |
+    INSERT INTO Polls
+    (Question, Username, Time, LastUpdate, Message, Channel)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    RETURNING PollID;
