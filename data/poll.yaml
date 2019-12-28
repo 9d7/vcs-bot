@@ -64,9 +64,9 @@ errors:
   question-too-long: The question you've entered is too long. Please
     limit your question to 255 characters.
   options-too-long: One of the options you've entered is too long.
-    Please limit each option to 255 characters.
+    Please limit each option to 80 characters.
   option-too-long: The option you've entered is too long. Please limit
-    your option to 255 characters.
+    your option to 80 characters.
   critical-database-issue: This message should never appear. If it does,
     tell Eric.
   # PollID not in database when it *ABSOLUTELY* should be.
@@ -74,6 +74,15 @@ errors:
   # this is a "never should happen" server error.
   poll-not-found-critical: Poll not found in database. Tell Eric.
 
-  poll-not-found: Invalid ID. Use !poll view to see the poll ID of
+  poll-not-found: Invalid ID. Use !poll view to see the poll ID of recent polls.
 
   options-not-found: Options not found in database. Tell Eric.
+
+  too-many-options: The poll has too many options. Please remove some with
+    !poll purge before continuing.
+  poll-overflow: There's too much to display in this poll. Please use
+    !poll purge to remove some extraneous options.
+  id-is-nan: <id> should be a number. Use !help poll for help with command
+    syntax.
+  poll-deleted: The message or channel containing the poll was deleted. Please
+    revive the poll with !poll revive <id>.

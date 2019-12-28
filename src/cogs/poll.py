@@ -5,6 +5,9 @@ from ruamel.yaml import YAML
 from src.base import *
 from datetime import datetime
 
+MAX_QUESTION_LENGTH = 255
+MAX_OPTION_LENGTH = 80
+
 
 class PollCog(commands.Cog):
 
@@ -43,10 +46,13 @@ class PollCog(commands.Cog):
     username = guild.get_member(
       user_id=self.str_to_snowflake(poll_info.username)).display_name
 
-    # get option info
+    # get option info, ordered from most to fewest votes
     options = sql_request(cursor,
-                          "SELECT OptionID, Emoji, Option FROM Options "
-                          "WHERE PollID = %s;", (poll_id,))
+                          "SELECT OptionID, Emoji, Option FROM Options O "
+                          "WHERE PollID=%s ORDER BY "
+                          "(SELECT COUNT(*) FROM Votes V "
+                          "WHERE V.OptionID=O.OptionID) DESC,"
+                          "O.OptionID ASC;", (poll_id,))
 
     # format strings
     header_string = style["poll-header"].format(poll_id,
@@ -86,7 +92,11 @@ class PollCog(commands.Cog):
       option_strings.append(final_string)
 
     # join string together :)
-    return "\n".join([header_string, question_string, *option_strings])
+    ret = "\n".join([header_string, question_string, *option_strings])
+    if len(ret) >= MAX_TEXT_LENGTH:
+      return errors["poll-overflow"]
+
+    return ret
 
   ### REACTION HANDLERS
   ### Using on_raw_reaction_x here instead of on_reaction_x so that the bot
@@ -148,7 +158,7 @@ class PollCog(commands.Cog):
     # add new vote
     if add:
       cursor.execute("INSERT INTO Votes "
-                     "(Username, OptionID) VALUES (%s, %s)",
+                     "(Username, OptionID) VALUES (%s, %s);",
                      (self.snowflake_to_str(payload.user_id), option))
 
     await message.edit(content=self.get_poll_string(guild, poll))
@@ -176,13 +186,27 @@ class PollCog(commands.Cog):
                  tag=True, expire=True)
       return
 
+    question = args[0]
+
+    if len(question) > MAX_QUESTION_LENGTH:
+      await send(ctx, self.messages["errors"]["question-too-long"],
+                 tag=True, expire=True)
+      return
+
+    if len(args) > 1:
+      if max(len(option) for option in args[1:]) > MAX_OPTION_LENGTH:
+        await send(ctx, self.messages["errors"]["options-too-long"],
+                   tag=True, expire=True)
+        return
+
     message = await send(ctx, self.messages['messages']['loading'],
                          tag=False, expire=False)
 
     message_flake = self.snowflake_to_str(message.id)
     channel_flake = self.snowflake_to_str(ctx.channel.id)
     user_flake = self.snowflake_to_str(ctx.author.id)
-    question = args[0]
+
+    # catch question-too-long and options-too-long errors
 
     cursor = self.conn.cursor()
 
@@ -210,7 +234,6 @@ class PollCog(commands.Cog):
       await message.add_reaction(self.str_to_emoji(emoji))
 
     message_string = self.get_poll_string(ctx.guild, poll_id)
-
     await message.edit(content=message_string)
 
     header = self.messages['style']['poll-header'].format(0, ctx.author.name)
@@ -218,6 +241,60 @@ class PollCog(commands.Cog):
 
   @poll.command()
   async def append(self, ctx: commands.context, *args):
+
+    errors = self.messages['errors']
+
+    if len(args) < 2:
+      await send(ctx, errors['wrong-arg-length'], tag=True, expire=True)
+      return
+
+    try:
+      id = int(args[0], 10)
+    except ValueError:
+      await send(ctx, errors['id-is-nan'], tag=True, expire=True)
+      return
+
+    cursor = self.conn.cursor()
+
+    poll_info = sql_request(cursor,
+                            "UPDATE Polls SET LastUpdate=%s WHERE "
+                            "PollID=%s RETURNING Message, Channel;",
+                            (datetime.now(), id))[0]
+
+    emojis = sql_request(cursor,
+                         "SELECT Emoji FROM Options WHERE PollID=%s;", (id,))
+
+    if len(emojis) == 0:
+      await send(ctx, errors['options-not-found'])
+      return
+
+    option = " ".join(args[1:])
+
+    for possible_emoji in self.messages['emojis']:
+      if possible_emoji not in emojis:
+        emoji = possible_emoji
+        break
+    else:
+      await send(ctx, errors['too-many-options'], tag=True, expire=True)
+      return
+
+    cursor.execute("INSERT INTO Options "
+                   "(PollID, Original, Username, Emoji, Option) "
+                   "VALUES (%s, %s, %s, %s, %s);",
+                   (id, False, self.snowflake_to_str(ctx.author.id),
+                    emoji, option))
+
+    channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+    if not channel:
+      await send(ctx, errors['poll-deleted'], tag=True, expire=True)
+      return
+    message = await ctx.fetch_message(self.str_to_snowflake(poll_info.message))
+    if not message:
+      await send(ctx, errors['poll-deleted'], tag=True, expire=True)
+      return
+
+    await message.edit(content=self.get_poll_string(ctx.guild, id))
+
     pass
 
   @poll.command()

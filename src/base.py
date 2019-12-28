@@ -5,6 +5,7 @@ from collections import namedtuple
 
 USER_DELETE_DELAY = 3
 BOT_DELETE_DELAY = 10
+MAX_TEXT_LENGTH = 2000
 
 CRITICAL_DATABASE_ISSUE = "Critical Error for SQL call:\n{}"
 
