@@ -60,6 +60,10 @@ style:
 
   loading: Loading poll...
 
+  overview_title: "Overview of Poll #{}"
+  overview_title_link: "Overview of [Poll #{}]({})"
+  readout_title: Poll Readout
+
 errors:
   command_not_found: Poll subcommand invalid.
     Type !help poll for a list of valid subcommands.
@@ -238,3 +242,6 @@ sql_requests:
     );
     DELETE FROM Options WHERE PollID=%s;
 
+  poll_metadata: |
+    SELECT LastUpdate, Time, Username, Message, Channel
+    FROM Polls WHERE PollID=%s;

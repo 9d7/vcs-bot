@@ -108,7 +108,7 @@ poll:
       specifying a zero-indexed page number.
     usage: '[page]'
 
-  remove:
+  delete:
     brief: Deletes a poll
     description: Deletes a poll from the list. You must have created the poll
       in order to delete it.
