@@ -14,3 +14,10 @@ SELECT MAX(O.OptionID) AS OptionID,
     ORDER BY
         VoteCount DESC,
         OptionID;
+
+
+DELETE FROM Votes AS V
+WHERE V.OptionID IN (
+    SELECT OptionID
+    FROM Options AS O
+    WHERE O.PollID=%s )

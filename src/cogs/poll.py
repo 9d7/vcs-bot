@@ -301,6 +301,10 @@ class PollCog(commands.Cog):
     await message.edit(content=self.get_poll_string(ctx.guild, id))
     await message.add_reaction(self.str_to_emoji(emoji))
 
+  ############################################################################
+  # list
+  ############################################################################
+
   @poll.command()
   async def list(self, ctx: commands.context, *args):
 
@@ -360,6 +364,56 @@ class PollCog(commands.Cog):
     embed.set_footer(text=footer)
 
     await ctx.send(embed=embed)
+
+  #############################################################################
+  # remove
+  #############################################################################
+  @poll.command()
+  async def delete(self, ctx: commands.context, *args):
+
+    requests = self.messages.sql_requests
+    errors = self.messages.errors
+
+    if len(args) != 1:
+      await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
+      return
+
+    try:
+      poll_id = int(args[0], 10)
+    except ValueError:
+      await send(ctx, errors.id_is_nan, tag=True, expire=True)
+      return
+
+    cursor = self.conn.cursor()
+
+    poll_info = sql_request(cursor, requests.delete_poll_info,
+                            (poll_id,))
+
+    if not poll_info:
+      await send(ctx, errors.poll_not_found, tag=True, expire=True)
+      return
+    poll_info = poll_info[0]
+
+    if self.snowflake_to_str(ctx.author.id) != poll_info.username:
+      await send(ctx, errors.not_author, tag=True, expire=True)
+
+    # delete old poll if it exists
+    channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+    if channel:
+      try:
+        message = await channel.fetch_message(
+          self.str_to_snowflake(poll_info.message)
+        )
+        await message.delete()
+      except discord.NotFound:
+        pass
+
+    cursor.execute(requests.delete_poll,
+                   (poll_id, poll_id, poll_id))
+
+  #############################################################################
+  # revive
+  #############################################################################
 
   @poll.command()
   async def revive(self, ctx: commands.context, *args):

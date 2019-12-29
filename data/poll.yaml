@@ -94,10 +94,13 @@ errors:
 
   poll_deleted: The message or channel containing the poll was deleted. Please
     revive the poll with !poll revive <id>.
+  not_author: You don't own that poll!
 
 
 sql_requests:
   reset: |
+    DROP VIEW IF EXISTS OptionVotes;
+
     DROP TABLE IF EXISTS Polls;
     DROP TABLE IF EXISTS Options;
     DROP TABLE IF EXISTS Votes;
@@ -122,8 +125,6 @@ sql_requests:
     CREATE TABLE Votes (
     Username  char(16),
     OptionID  int);
-
-    DROP VIEW IF EXISTS OptionVotes;
 
     CREATE OR REPLACE VIEW OptionVotes AS (
     SELECT
@@ -219,6 +220,21 @@ sql_requests:
     SELECT Question, Username FROM Polls
     WHERE PollID=%s;
 
-  move-poll: |
+  move_poll: |
     UPDATE Polls SET Message=%s, Channel=%s
     WHERE PollID=%s;
+
+  delete_poll_info: |
+    SELECT Username, Message, Channel FROM Polls
+    WHERE PollID=%s;
+
+  delete_poll: |
+    DELETE FROM Polls WHERE PollID=%s;
+    DELETE FROM Votes AS V
+    WHERE V.OptionID IN (
+        SELECT OptionID
+        FROM Options AS O
+        WHERE O.PollID=%s
+    );
+    DELETE FROM Options WHERE PollID=%s;
+
