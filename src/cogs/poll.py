@@ -140,7 +140,7 @@ class PollCog(commands.Cog):
             await message.remove_reaction(payload.emoji, user)
             return
 
-        # neither are multi-codepoint emojis (sorry, country flags and skin tones)
+        # neither are multi-codepoint emojis (sorry, country flags)
         if len(payload.emoji.name) > 1:
             await message.remove_reaction(payload.emoji, user)
             return
@@ -170,7 +170,8 @@ class PollCog(commands.Cog):
         await message.edit(content=self.get_poll_string(guild, poll))
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_add(self,
+                                  payload: discord.RawReactionActionEvent):
         await self.on_reaction(payload, add=True)
 
     @commands.Cog.listener()
@@ -185,9 +186,9 @@ class PollCog(commands.Cog):
             await send(ctx, self.messages.errors.command_not_found,
                        tag=True, expire=True)
 
-    #############################################################################
+    ############################################################################
     # create
-    #############################################################################
+    ############################################################################
 
     @poll.command()
     async def create(self, ctx: commands.context, *args):
@@ -245,9 +246,9 @@ class PollCog(commands.Cog):
         message_string = self.get_poll_string(ctx.guild, poll_id)
         await message.edit(content=message_string)
 
-    #############################################################################
+    ############################################################################
     # append
-    #############################################################################
+    ############################################################################
 
     @poll.command()
     async def append(self, ctx: commands.context, *args):
@@ -297,7 +298,9 @@ class PollCog(commands.Cog):
                        (id, False, self.snowflake_to_str(ctx.author.id),
                         emoji, option))
 
-        channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+        channel = ctx.guild.get_channel(
+            self.str_to_snowflake(poll_info.channel)
+        )
         if not channel:
             await send(ctx, errors.poll_deleted, tag=True, expire=True)
             return
@@ -341,7 +344,9 @@ class PollCog(commands.Cog):
 
         cursor = self.conn.cursor()
 
-        num_pages = sql_request(cursor, requests.num_pages, (POLLS_PER_PAGE,))[0]
+        num_pages = sql_request(
+            cursor, requests.num_pages, (POLLS_PER_PAGE,)
+        )[0]
 
         if num_pages == 0:
             await send(ctx, errors.no_polls_to_list, tag=True, expire=True)
@@ -375,9 +380,9 @@ class PollCog(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    #############################################################################
+    ############################################################################
     # remove
-    #############################################################################
+    ############################################################################
     @poll.command()
     async def delete(self, ctx: commands.context, *args):
 
@@ -408,7 +413,9 @@ class PollCog(commands.Cog):
             await send(ctx, errors.not_author, tag=True, expire=True)
 
         # delete old poll if it exists
-        channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+        channel = ctx.guild.get_channel(
+            self.str_to_snowflake(poll_info.channel)
+        )
         if channel:
             try:
                 message = await channel.fetch_message(
@@ -421,9 +428,9 @@ class PollCog(commands.Cog):
         cursor.execute(requests.delete_poll,
                        (poll_id, poll_id, poll_id))
 
-    #############################################################################
+    ############################################################################
     # revive
-    #############################################################################
+    ############################################################################
 
     @poll.command()
     async def revive(self, ctx: commands.context, *args):
@@ -452,7 +459,9 @@ class PollCog(commands.Cog):
         poll_info = poll_info[0]
 
         # delete old poll if it exists
-        channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+        channel = ctx.guild.get_channel(
+            self.str_to_snowflake(poll_info.channel)
+        )
         if channel:
             try:
                 message = await channel.fetch_message(
@@ -479,9 +488,9 @@ class PollCog(commands.Cog):
 
         await message.edit(content=self.get_poll_string(ctx.guild, poll_id))
 
-    #############################################################################
+    ############################################################################
     # view
-    #############################################################################
+    ############################################################################
 
     @poll.command()
     async def view(self, ctx: commands.context, *args):
@@ -509,7 +518,9 @@ class PollCog(commands.Cog):
             return
         metadata = metadata[0]
 
-        channel = ctx.guild.get_channel(self.str_to_snowflake(metadata.channel))
+        channel = ctx.guild.get_channel(
+            self.str_to_snowflake(metadata.channel)
+        )
         if not channel:
             link = None
         else:
@@ -538,9 +549,9 @@ class PollCog(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    #############################################################################
+    ############################################################################
     # purge
-    #############################################################################
+    ############################################################################
 
     @poll.command()
     async def purge(self, ctx: commands.context, *args):

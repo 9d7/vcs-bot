@@ -44,14 +44,17 @@ class HelpCog(commands.Cog):
             return
 
         text = self.help_text
+        meta = self.help_text['meta']
         for i, val in enumerate(args):
             if val not in text:
                 if i == 0:
-                    format_msg = self.help_text['meta']['errors']['no_base_command']
-                    await send(ctx, format_msg.format("!" + val), tag=True, expire=True)
+                    format_msg = meta['errors']['no_base_command']
+                    await send(ctx, format_msg.format("!" + val),
+                               tag=True, expire=True)
                 else:
-                    format_msg = self.help_text['meta']['errors']['no_subcommand']
-                    await send(ctx, format_msg.format(val, "!" + " ".join(args[:i])),
+                    format_msg = meta['errors']['no_subcommand']
+                    await send(ctx,
+                               format_msg.format(val, "!" + " ".join(args[:i])),
                                tag=True, expire=True)
                 return
 
@@ -63,7 +66,7 @@ class HelpCog(commands.Cog):
 
         command_name = "!" + " ".join(args)
         embed.set_author(name=command_name)
-        embed.add_field(name=self.help_text['meta']['description_tag'],
+        embed.add_field(name=meta['description_tag'],
                         value=text['description'],
                         inline=False)
 
@@ -93,10 +96,10 @@ class HelpCog(commands.Cog):
                 usage = command_name + " " + usage
 
             # add usage as second field
-            embed.add_field(name=self.help_text['meta']['usage_tag'],
+            embed.add_field(name=meta['usage_tag'],
                             value=usage,
                             inline=False)
-            embed.set_footer(text=self.help_text['meta']['footer'])
+            embed.set_footer(text=meta['footer'])
 
         else:
             # add subcommands as fields
