@@ -52,8 +52,11 @@ style:
   vote_plural: votes
 
   no_votes: "Nobody :("
+  no_votes_summary: "No votes :("
+  summary_title: Poll List
 
-  summary_string: "**#{}:** *{}* - {}"
+  summary_string: "**#{}:** {} - *{}*"
+  summary_footer: "Page {} of {}"
 
 messages:
   loading: Loading poll...
@@ -84,6 +87,12 @@ errors:
     !poll purge to remove some extraneous options.
   id_is_nan: <id> should be a number. Use !help poll for help with command
     syntax.
+  page_is_nan: <page> should be a number. Use !help poll for help with command
+    syntax.
+  no_polls_to_list: There are currently no polls.
+    Create a poll with !poll create.
+  page_oob: The page you requested is out of bounds.
+
   poll_deleted: The message or channel containing the poll was deleted. Please
     revive the poll with !poll revive <id>.
 
@@ -143,7 +152,8 @@ sql_requests:
         OptionID;
 
   summary: |
-    SELECT MAX(P.PollID), MAX(P.Question),
+    SELECT MAX(P.PollID) AS PollID,
+           MAX(P.Question) AS Question,
            (CASE
                 WHEN MAX(MV.VoteCount)=0 THEN %s
                 ELSE STRING_AGG(O.Option, ', ') END) AS Result
@@ -153,7 +163,7 @@ sql_requests:
         FROM Polls
         ORDER BY PollID DESC
         OFFSET %s
-        LIMIT 10
+        LIMIT %s
         ) AS P
     INNER JOIN OptionVotes AS O ON P.PollID=O.PollID
     INNER JOIN (
@@ -162,6 +172,12 @@ sql_requests:
         FROM OptionVotes GROUP BY PollID
         ) AS MV ON MV.PollID=P.PollID AND O.VoteCount=MV.VoteCount
     GROUP BY O.PollID;
+
+  num_pages: |
+    SELECT CEIL(
+        CAST(COUNT(*) AS FLOAT) /
+        CAST(%s AS FLOAT)) AS MaxPages
+    FROM Polls;
 
   new_option: |
     INSERT INTO

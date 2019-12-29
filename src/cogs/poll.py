@@ -8,6 +8,7 @@ import box
 
 MAX_QUESTION_LENGTH = 255
 MAX_OPTION_LENGTH = 80
+POLLS_PER_PAGE = 10
 
 
 class PollCog(commands.Cog):
@@ -300,7 +301,62 @@ class PollCog(commands.Cog):
 
   @poll.command()
   async def list(self, ctx: commands.context, *args):
-    pass
+
+    requests = self.messages.sql_requests
+    errors = self.messages.errors
+    style = self.messages.style
+
+    if len(args) > 1:
+      await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
+      return
+
+    if len(args) == 0:
+      page = 1
+    else:
+      try:
+        page = int(args[0], base=10)
+      except ValueError:
+        await send(ctx, errors.page_is_nan, tag=True, expire=True)
+        return
+
+    if page < 1:
+      await send(ctx, errors.page_oob, tag=True, expire=True)
+      return
+
+    cursor = self.conn.cursor()
+
+    num_pages = sql_request(cursor, requests.num_pages, (POLLS_PER_PAGE,))[0]
+
+    if num_pages == 0:
+      await send(ctx, errors.no_polls_to_list, tag=True, expire=True)
+      return
+
+    if page > num_pages:
+      await send(ctx, errors.page_oob, tag=True, expire=True)
+
+    poll_summaries = sql_request(cursor,
+                                 requests.summary,
+                                 (style.no_votes_summary,
+                                  (page - 1) * POLLS_PER_PAGE,
+                                  POLLS_PER_PAGE))
+
+    format_string = style.summary_string
+    summaries = "\n".join(
+      format_string.format(i.pollid, i.question, i.result)
+      for i in poll_summaries
+    )
+
+    embed = discord.Embed(
+      color=discord.Color.red(),
+      title=style.summary_title,
+      description=summaries
+    )
+
+    footer = style.summary_footer.format(page, int(num_pages))
+
+    embed.set_footer(text=footer)
+
+    await ctx.send(embed=embed)
 
   @poll.command()
   async def revive(self, ctx: commands.context, *args):
