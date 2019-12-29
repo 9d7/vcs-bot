@@ -28,6 +28,9 @@ class PollCog(commands.Cog):
   def snowflake_to_str(self, flake: int):
     return "{0:016X}".format(flake)
 
+  def snowflake_to_user(self, guild: discord.Guild, flake: str):
+    return guild.get_member(user_id=int(flake, 16)).display_name
+
   def str_to_snowflake(self, flake: str):
     return int(flake, 16)
 
@@ -35,35 +38,24 @@ class PollCog(commands.Cog):
 
     style = self.messages.style
     errors = self.messages.errors
+    requests = self.messages.sql_requests
 
     cursor = self.conn.cursor()
 
     # get poll info
     poll_info = sql_request(cursor,
-                            "SELECT Question, Username FROM Polls "
-                            "WHERE PollID=%s;",
+                            requests.get_poll,
                             (poll_id,))[0]
 
-    username = guild.get_member(
-      user_id=self.str_to_snowflake(poll_info.username)).display_name
+    username = self.snowflake_to_user(guild, poll_info.username)
 
     # get option info, ordered from most to fewest votes
     options = sql_request(cursor,
-                          "SELECT MAX(O.OptionID) AS OptionID, "
-                          "       MAX(Emoji) AS Emoji, "
-                          "       MAX(Option) AS Option "
-                          "FROM Options AS O "
-                          "LEFT OUTER JOIN Votes AS V "
-                          "ON O.OptionID=V.OptionID "
-                          "WHERE O.PollID=%s "
-                          "GROUP BY O.OptionID "
-                          "ORDER BY "
-                          "  COUNT(V.Username) DESC, "
-                          "  OptionID ASC;", (poll_id,))
+                          requests.readout, (poll_id,))
 
     # format strings
     header_string = style.poll_header.format(poll_id,
-                                                username)
+                                             username)
     question_string = style.question_string.format(poll_info.question)
 
     option_strings = []
@@ -74,27 +66,21 @@ class PollCog(commands.Cog):
       emoji = self.str_to_emoji(option.emoji)
 
       # get votes
-      users = sql_request(cursor,
-                          "SELECT DISTINCT Username FROM Votes "
-                          "WHERE OptionID=%s;",
-                          (option.optionid,))
-
-      all_votes = ", ".join(
-        guild.get_member(user_id=self.str_to_snowflake(voter_id)).display_name
-        for voter_id in users)
-
-      if all_votes == "":
+      if option.votes:
+        users = option.votes.split(" ")
+        users = [self.snowflake_to_user(guild, user) for user in users]
+        all_votes = ", ".join(users)
+      else:
         all_votes = style.no_votes
 
       # format options string
-      vote_count = len(users)
 
       vote_str = style.vote_plural
-      if vote_count == 1:
+      if option.votecount == 1:
         vote_str = style.vote_singular
 
       final_string = style.option_string.format(
-        vote_count, vote_str, emoji, option.option, all_votes)
+        option.votecount, vote_str, emoji, option.option, all_votes)
 
       option_strings.append(final_string)
 
@@ -110,6 +96,9 @@ class PollCog(commands.Cog):
   ### will still process polls after a restart, when the internal cache is
   ### cleared.
   async def on_reaction(self, payload: discord.RawReactionActionEvent, add):
+
+    requests = self.messages.sql_requests
+
     guild = self.bot.get_guild(payload.guild_id)
     channel = guild.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
@@ -121,8 +110,7 @@ class PollCog(commands.Cog):
 
     # get poll
     poll = sql_request(cursor,
-                       "UPDATE Polls SET LastUpdate=%s WHERE "
-                       "Message=%s AND Channel=%s RETURNING PollID;",
+                       requests.get_id_from_message,
                        (datetime.now(),
                         self.snowflake_to_str(payload.message_id),
                         self.snowflake_to_str(payload.channel_id)))
@@ -146,9 +134,7 @@ class PollCog(commands.Cog):
     emoji = self.emoji_to_str(payload.emoji.name)
 
     # get option
-    option = sql_request(cursor,
-                         "SELECT OptionID FROM Options WHERE "
-                         "PollID=%s AND Emoji=%s;",
+    option = sql_request(cursor, requests.option_from_emoji,
                          (poll, emoji))
 
     # emoji not a real option--remove it
@@ -158,14 +144,12 @@ class PollCog(commands.Cog):
     option = option[0]
 
     # remove old vote
-    cursor.execute("DELETE FROM Votes WHERE "
-                   "Username=%s AND OptionID=%s;",
+    cursor.execute(requests.remove_vote,
                    (self.snowflake_to_str(payload.user_id), option))
 
     # add new vote
     if add:
-      cursor.execute("INSERT INTO Votes "
-                     "(Username, OptionID) VALUES (%s, %s);",
+      cursor.execute(requests.add_vote,
                      (self.snowflake_to_str(payload.user_id), option))
 
     await message.edit(content=self.get_poll_string(guild, poll))
@@ -186,6 +170,10 @@ class PollCog(commands.Cog):
       await send(ctx, self.messages.errors.command_not_found,
                  tag=True, expire=True)
 
+  #############################################################################
+  # create
+  #############################################################################
+
   @poll.command()
   async def create(self, ctx: commands.context, *args):
 
@@ -200,7 +188,7 @@ class PollCog(commands.Cog):
     question = args[0]
 
     if len(question) > MAX_QUESTION_LENGTH:
-      await send(ctx, errors.question-too-long,
+      await send(ctx, errors.question - too - long,
                  tag=True, expire=True)
       return
 
@@ -243,11 +231,12 @@ class PollCog(commands.Cog):
     await message.edit(content=message_string)
 
     header = self.messages.style.poll_header.format(poll_id,
-                                                          ctx.author.name)
+                                                    ctx.author.name)
     q_str = self.messages.style.question_string.format(question)
 
-
-
+  #############################################################################
+  # append
+  #############################################################################
 
   @poll.command()
   async def append(self, ctx: commands.context, *args):
@@ -267,7 +256,7 @@ class PollCog(commands.Cog):
 
     cursor = self.conn.cursor()
 
-    poll_info = sql_request(cursor, requests.get_message_channel,
+    poll_info = sql_request(cursor, requests.get_message_from_id,
                             (datetime.now(), id))
     if not poll_info:
       await send(ctx, errors.poll_not_found)
@@ -279,6 +268,9 @@ class PollCog(commands.Cog):
       return
 
     option = " ".join(args[1:])
+
+    if len(option) > MAX_OPTION_LENGTH:
+      await send(ctx, errors.option_too_long, tag=True, expire=True)
 
     for possible_emoji in self.messages.emojis:
       if possible_emoji not in emojis:
@@ -297,7 +289,8 @@ class PollCog(commands.Cog):
       await send(ctx, errors.poll_deleted, tag=True, expire=True)
       return
     try:
-      message = await ctx.fetch_message(self.str_to_snowflake(poll_info.message))
+      message = await ctx.fetch_message(
+        self.str_to_snowflake(poll_info.message))
     except discord.NotFound:
       await send(ctx, errors.poll_deleted, tag=True, expire=True)
       return

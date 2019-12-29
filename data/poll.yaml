@@ -53,7 +53,7 @@ style:
 
   no_votes: "Nobody :("
 
-  summary_string: "#{}: {} - *{}*"
+  summary_string: "**#{}:** *{}* - {}"
 
 messages:
   loading: Loading poll...
@@ -139,7 +139,7 @@ sql_requests:
     WHERE O.PollID=1
     GROUP BY O.OptionID
     ORDER BY
-        COUNT(V.Username) DESC,
+        VoteCount DESC,
         OptionID;
 
   summary: |
@@ -171,13 +171,34 @@ sql_requests:
 
   get_emojis: SELECT Emoji FROM Options WHERE PollID=%s;
 
-  get_message_channel: |
+  get_message_from_id: |
     UPDATE Polls SET LastUpdate=%s
     WHERE PollID=%s
     RETURNING Message, Channel;
+
+  get_id_from_message: |
+    UPDATE Polls SET LastUpdate=%s
+    WHERE Message=%s AND Channel=%s
+    RETURNING PollID;
 
   new_poll: |
     INSERT INTO Polls
     (Question, Username, Time, LastUpdate, Message, Channel)
     VALUES (%s, %s, %s, %s, %s, %s)
     RETURNING PollID;
+
+  remove_vote: |
+    DELETE FROM Votes WHERE
+    Username=%s AND OptionID=%s;
+
+  add_vote: |
+    INSERT INTO Votes (Username, OptionID)
+    VALUES (%s, %s);
+
+  option_from_emoji: |
+    SELECT OptionID FROM Options WHERE
+    PollID=%s AND Emoji=%s;
+
+  get_poll: |
+    SELECT Question, Username FROM Polls
+    WHERE PollID=%s;
