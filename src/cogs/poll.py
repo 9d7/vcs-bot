@@ -333,6 +333,7 @@ class PollCog(commands.Cog):
 
     if page > num_pages:
       await send(ctx, errors.page_oob, tag=True, expire=True)
+      return
 
     poll_summaries = sql_request(cursor,
                                  requests.summary,
