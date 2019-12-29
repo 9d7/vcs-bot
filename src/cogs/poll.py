@@ -199,7 +199,7 @@ class PollCog(commands.Cog):
                    tag=True, expire=True)
         return
 
-    message = await send(ctx, self.messages.messages.loading,
+    message = await send(ctx, self.messages.style.loading,
                          tag=False, expire=False)
 
     message_flake = self.snowflake_to_str(message.id)
@@ -261,6 +261,8 @@ class PollCog(commands.Cog):
                             (datetime.now(), id))
     if not poll_info:
       await send(ctx, errors.poll_not_found)
+
+    poll_info = poll_info[0]
 
     emojis = sql_request(cursor, requests.get_emojis, (id,))
 
@@ -343,7 +345,7 @@ class PollCog(commands.Cog):
 
     format_string = style.summary_string
     summaries = "\n".join(
-      format_string.format(i.pollid, i.question, i.result)
+      format_string.format(str(i.pollid).zfill(3), i.question, i.result)
       for i in poll_summaries
     )
 
@@ -361,15 +363,67 @@ class PollCog(commands.Cog):
 
   @poll.command()
   async def revive(self, ctx: commands.context, *args):
-    pass
+
+    requests = self.messages.sql_requests
+    errors = self.messages.errors
+
+    if len(args) != 1:
+      await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
+      return
+
+    try:
+      id = int(args[0], 10)
+    except ValueError:
+      await send(ctx, errors.id_is_nan, tag=True, expire=True)
+      return
+
+    cursor = self.conn.cursor()
+
+    poll_info = sql_request(cursor, requests.get_message_from_id,
+                            (datetime.now(), id))
+
+    if not poll_info:
+      await send(ctx, errors.poll_not_found, tag=True, expire=True)
+      return
+    poll_info = poll_info[0]
+
+    # delete old poll if it exists
+    channel = ctx.guild.get_channel(self.str_to_snowflake(poll_info.channel))
+    if channel:
+      try:
+        message = await channel.fetch_message(
+          self.str_to_snowflake(poll_info.message)
+        )
+        await message.delete()
+      except discord.NotFound:
+        pass
+
+    # new message
+    message = await send(ctx, self.messages.style.loading,
+                         tag=False, expire=False)
+
+    cursor.execute(requests.move_poll,
+                   (self.snowflake_to_str(message.id),
+                    self.snowflake_to_str(ctx.channel.id),
+                    id))
+
+    emojis = sql_request(cursor,
+                         requests.get_emojis,
+                         (id,))
+    for emoji in emojis:
+      await message.add_reaction(self.str_to_emoji(emoji))
+
+    await message.edit(content=self.get_poll_string(ctx.guild, id))
 
   @poll.command()
   async def view(self, ctx: commands.context, *args):
     pass
 
+
   @poll.command()
   async def purge(self, ctx: commands.context, *args):
     pass
+
 
   # TODO: Remove this when done
   @poll.command()

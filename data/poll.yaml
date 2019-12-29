@@ -55,10 +55,9 @@ style:
   no_votes_summary: "No votes :("
   summary_title: Poll List
 
-  summary_string: "**#{}:** {} - *{}*"
+  summary_string: "`#{}:`  {} - {}"
   summary_footer: "Page {} of {}"
 
-messages:
   loading: Loading poll...
 
 errors:
@@ -145,7 +144,7 @@ sql_requests:
     FROM Options AS O
     LEFT OUTER JOIN Votes AS V
     ON O.OptionID=V.OptionID
-    WHERE O.PollID=1
+    WHERE O.PollID=%s
     GROUP BY O.OptionID
     ORDER BY
         VoteCount DESC,
@@ -171,7 +170,8 @@ sql_requests:
                MAX(VoteCount) AS VoteCount
         FROM OptionVotes GROUP BY PollID
         ) AS MV ON MV.PollID=P.PollID AND O.VoteCount=MV.VoteCount
-    GROUP BY O.PollID;
+    GROUP BY O.PollID
+    ORDER BY O.PollID DESC;
 
   num_pages: |
     SELECT CEIL(
@@ -217,4 +217,8 @@ sql_requests:
 
   get_poll: |
     SELECT Question, Username FROM Polls
+    WHERE PollID=%s;
+
+  move-poll: |
+    UPDATE Polls SET Message=%s, Channel=%s
     WHERE PollID=%s;
