@@ -68,6 +68,10 @@ style:
   option_title: Options
   question_title: Question
 
+  password_enter: Please enter the reset password.
+  password_fail: The reset was unsuccessful.
+  password_succeed: The reset was successful.
+
 
 errors:
   command_not_found: Poll subcommand invalid.

@@ -1,4 +1,4 @@
-import discord
+import discord, os, asyncio
 from src.base import *
 from datetime import datetime
 import box
@@ -9,7 +9,7 @@ MAX_OPTION_LENGTH = 80
 POLLS_PER_PAGE = 10
 
 
-class PollCog(commands.Cog):
+class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
 
     def __init__(self, poll_file: str,
                  conn, bot: commands.Bot):
@@ -37,6 +37,7 @@ class PollCog(commands.Cog):
     @staticmethod
     def str_to_snowflake(flake: str):
         return int(flake, 16)
+
 
     def get_option_string(self, guild: discord.Guild, poll_id: int):
 
@@ -192,6 +193,7 @@ class PollCog(commands.Cog):
     ############################################################################
 
     @poll.command()
+    @commands.check(non_dm)
     async def create(self, ctx: commands.context, *args):
 
         errors = self.messages.errors
@@ -252,6 +254,7 @@ class PollCog(commands.Cog):
     ############################################################################
 
     @poll.command()
+    @commands.check(non_dm)
     async def append(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
@@ -385,6 +388,7 @@ class PollCog(commands.Cog):
     # remove
     ############################################################################
     @poll.command()
+    @commands.check(non_dm)
     async def delete(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
@@ -434,6 +438,7 @@ class PollCog(commands.Cog):
     ############################################################################
 
     @poll.command()
+    @commands.check(non_dm)
     async def revive(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
@@ -576,6 +581,7 @@ class PollCog(commands.Cog):
     ############################################################################
 
     @poll.command()
+    @commands.check(non_dm)
     async def purge(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
@@ -648,12 +654,29 @@ class PollCog(commands.Cog):
 
             await message.edit(
                 content=self.get_poll_string(ctx.guild, poll_id)
+
             )
 
-
-    # TODO: Remove this when done
     @poll.command()
     async def reset(self, ctx: commands.context, *args):
-        cursor = self.conn.cursor()
 
-        cursor.execute(self.messages.sql_requests.reset)
+        style = self.messages.style
+
+        await send_dm(ctx.author, style.password_enter)
+        channel = ctx.author.dm_channel
+
+        try:
+            await self.bot.wait_for(
+                'message', timeout=20.0,
+                check=lambda x: x.channel == channel and
+                                x.author == ctx.author and
+                                x.content == os.environ['RESET_PASSWORD'])
+        except asyncio.TimeoutError:
+            await send_dm(ctx.author, style.password_fail)
+        else:
+            cursor = self.conn.cursor()
+            cursor.execute(self.messages.sql_requests.reset)
+            await send_dm(ctx.author, style.password_succeed)
+
+
+
