@@ -296,7 +296,7 @@ class PollCog(commands.Cog):
             return
 
         cursor.execute(self.messages.sql_requests.new_option,
-                       (id, False, self.snowflake_to_str(ctx.author.id),
+                       (poll_id, False, self.snowflake_to_str(ctx.author.id),
                         emoji, option))
 
         channel = ctx.guild.get_channel(
@@ -370,7 +370,7 @@ class PollCog(commands.Cog):
         )
 
         embed = discord.Embed(
-            color=discord.Color.red(),
+            color=random_color(),
             title=style.summary_title,
             description=summaries
         )
@@ -541,13 +541,13 @@ class PollCog(commands.Cog):
         if link:
             embed = discord.Embed(
                 title=title,
-                color=discord.Color.red(),
+                color=random_color(),
                 description=style.overview_link.format(link)
             )
         else:
             embed = discord.Embed(
-                title=style.overview_title.format(poll_id),
-                color=discord.Color.red()
+                title=title,
+                color=random_color()
             )
 
         footer = style.timestamp.format(
@@ -577,7 +577,79 @@ class PollCog(commands.Cog):
 
     @poll.command()
     async def purge(self, ctx: commands.context, *args):
-        pass
+
+        requests = self.messages.sql_requests
+        errors = self.messages.errors
+
+        if len(args) not in [1, 2]:
+            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
+            return
+
+        try:
+            poll_id = int(args[0], 10)
+        except ValueError:
+            await send(ctx, errors.id_is_nan, tag=True, expire=True)
+            return
+
+        cursor = self.conn.cursor()
+
+        force = len(args) > 1
+
+        poll_info = sql_request(cursor,
+                                requests.get_message_from_id,
+                                (datetime.utcnow(), poll_id))
+        if not poll_info:
+            await send(ctx, errors.poll_not_found, tag=True, expire=True)
+            return
+        poll_info = poll_info[0]
+
+        # get old poll message if it exists
+        message = None
+
+        channel = ctx.guild.get_channel(
+            self.str_to_snowflake(poll_info.channel)
+        )
+        if channel:
+            try:
+                message = await channel.fetch_message(
+                    self.str_to_snowflake(poll_info.message)
+                )
+            except discord.NotFound:
+                pass
+
+        if force:
+            emojis = sql_request(cursor,
+                                 requests.purge_force,
+                                 (poll_id, poll_id))
+        else:
+            emojis = sql_request(cursor,
+                                 requests.purge,
+                                 (poll_id, poll_id))
+
+        # remove options from message
+        if message:
+            for reaction in message.reactions:
+
+                remove = False
+                # custom emojis are not allowed on polls
+                if type(reaction.emoji) != str:
+                    remove = True
+
+                # neither are multi-codepoint emojis (sorry, country flags)
+                if len(reaction.emoji) > 1:
+                    remove = True
+
+                elif self.emoji_to_str(reaction.emoji) in emojis:
+                    remove = True
+
+                if remove:
+                    async for user in reaction.users():
+                        await reaction.remove(user)
+
+            await message.edit(
+                content=self.get_poll_string(ctx.guild, poll_id)
+            )
+
 
     # TODO: Remove this when done
     @poll.command()

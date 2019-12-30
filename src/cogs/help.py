@@ -5,9 +5,9 @@ from src.base import *
 
 class HelpCog(commands.Cog):
 
-    def _get_base_help_msg(self):
+    def get_base_help_msg(self):
         embed = discord.Embed(
-            color=discord.Color.red(),
+            color=random_color(),
             title=self.help_text['meta']['title']
         )
 
@@ -34,13 +34,12 @@ class HelpCog(commands.Cog):
             self.help_text = yaml.load(help_fd)
 
         self.bot = bot
-        self.base_help_msg = self._get_base_help_msg()
 
     @commands.command()
     @delete_source
     async def help(self, ctx: commands.context, *args):
         if len(args) == 0:
-            await ctx.send(embed=self.base_help_msg)
+            await ctx.send(embed=self.get_base_help_msg())
             return
 
         text = self.help_text
@@ -61,7 +60,7 @@ class HelpCog(commands.Cog):
             text = text[val]
 
         embed = discord.Embed(
-            color=discord.Color.red()
+            color=random_color()
         )
 
         command_name = "!" + " ".join(args)

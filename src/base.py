@@ -1,11 +1,18 @@
 from discord.ext import commands
+import discord
 from functools import wraps
 import psycopg2
 from collections import namedtuple
+import colorsys
+import random
 
 USER_DELETE_DELAY = 3
 BOT_DELETE_DELAY = 10
 MAX_TEXT_LENGTH = 2000
+
+RANDOM_COLOR_S = 0.75
+RANDOM_COLOR_V = 0.9
+
 
 CRITICAL_DATABASE_ISSUE = "Critical Error for SQL call:\n{}"
 
@@ -45,3 +52,8 @@ async def send(ctx, message: str, tag: bool, expire: bool):
     return await ctx.send(content=message, delete_after=BOT_DELETE_DELAY)
   else:
     return await ctx.send(content=message)
+
+def random_color():
+  h = random.uniform(0, 1)
+  print(h)
+  return discord.Color.from_hsv(h, RANDOM_COLOR_S, RANDOM_COLOR_V)

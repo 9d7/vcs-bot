@@ -108,6 +108,8 @@ errors:
 
 sql_requests:
   reset: |
+    DROP VIEW IF EXISTS PurgeForce;
+    DROP VIEW IF EXISTS Purge;
     DROP VIEW IF EXISTS OptionVotes;
 
     DROP TABLE IF EXISTS Polls;
@@ -137,6 +139,7 @@ sql_requests:
 
     CREATE OR REPLACE VIEW OptionVotes AS (
     SELECT
+    MAX(O.OptionID) AS OptionID,
     MAX(O.PollID) AS PollID,
     MAX(O.Option) AS Option,
     COUNT(V.Username) AS VoteCount
@@ -144,6 +147,39 @@ sql_requests:
     LEFT OUTER JOIN Votes AS V
     ON O.OptionID=V.OptionID
     GROUP BY O.OptionID);
+
+    CREATE OR REPLACE VIEW PurgeForce AS (
+      SELECT
+        MAX(O.OptionID) AS OptionID,
+        MAX(O.PollID) AS PollID
+      FROM Options AS O
+        INNER JOIN OptionVotes AS OV
+          ON OV.OptionID=O.OptionID
+        WHERE (
+          O.Original=false AND (
+            OV.VoteCount=0 OR (
+              OV.VoteCount=1 AND
+              O.Username=(
+                SELECT Username FROM Votes AS V
+                WHERE V.OptionID=O.OptionID
+              )
+            )
+          )
+        ) GROUP BY O.OptionID
+    );
+
+    CREATE OR REPLACE VIEW Purge AS (
+      SELECT
+        MAX(O.OptionID) AS OptionID,
+        MAX(O.PollID) AS PollID
+      FROM Options AS O
+      INNER JOIN OptionVotes AS OV
+        ON OV.OptionID=O.OptionID
+      WHERE (
+        O.Original=false AND
+        OV.VoteCount=0
+      ) GROUP BY O.OptionID
+    );
 
   readout: |
     SELECT MAX(O.OptionID) AS OptionID,
@@ -250,3 +286,23 @@ sql_requests:
   poll_metadata: |
     SELECT Question, LastUpdate, Time, Username, Message, Channel
     FROM Polls WHERE PollID=%s;
+
+  purge: |
+    DELETE FROM Votes WHERE OptionID IN (
+      SELECT OptionID FROM Purge
+      WHERE PollID=%s
+    );
+    DELETE FROM Options WHERE OptionID IN (
+      SELECT OptionID FROM Purge
+      WHERE PollID=%s
+    ) RETURNING Emoji;
+
+  purge_force: |
+    DELETE FROM Votes WHERE OptionID IN (
+      SELECT OptionID FROM PurgeForce
+      WHERE PollID=%s
+    );
+    DELETE FROM Options WHERE OptionID IN (
+      SELECT OptionID FROM PurgeForce
+      WHERE PollID=%s
+    ) RETURNING Emoji;
