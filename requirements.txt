@@ -1,4 +1,5 @@
-discord.py>=1.2.5
+discord.py
 python-box==3.4.6
 ruamel.yaml==0.16.5
 psycopg2-binary
+arrow==0.15.4

@@ -60,9 +60,14 @@ style:
 
   loading: Loading poll...
 
-  overview_title: "Overview of Poll #{}"
-  overview_title_link: "Overview of [Poll #{}]({})"
-  readout_title: Poll Readout
+  overview_title: "Poll #{} (by {})"
+  overview_link: "[Link to Poll]({})"
+  timestamp: "Poll created {} and was last changed {}"
+  created_by: "Created by {}"
+
+  option_title: Options
+  question_title: Question
+
 
 errors:
   command_not_found: Poll subcommand invalid.
@@ -243,5 +248,5 @@ sql_requests:
     DELETE FROM Options WHERE PollID=%s;
 
   poll_metadata: |
-    SELECT LastUpdate, Time, Username, Message, Channel
+    SELECT Question, LastUpdate, Time, Username, Message, Channel
     FROM Polls WHERE PollID=%s;

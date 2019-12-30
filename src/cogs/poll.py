@@ -2,6 +2,7 @@ import discord
 from src.base import *
 from datetime import datetime
 import box
+import arrow
 
 MAX_QUESTION_LENGTH = 255
 MAX_OPTION_LENGTH = 80
@@ -74,7 +75,7 @@ class PollCog(commands.Cog):
 
             option_strings.append(final_string)
 
-            return "/n".join(option_strings)
+        return "\n".join(option_strings)
 
     def get_poll_string(self, guild: discord.Guild, poll_id):
 
@@ -126,7 +127,7 @@ class PollCog(commands.Cog):
         # get poll
         poll = sql_request(cursor,
                            requests.get_id_from_message,
-                           (datetime.now(),
+                           (datetime.utcnow(),
                             self.snowflake_to_str(payload.message_id),
                             self.snowflake_to_str(payload.channel_id)))
 
@@ -226,8 +227,8 @@ class PollCog(commands.Cog):
         cursor = self.conn.cursor()
 
         cursor.execute(requests.new_poll,
-                       (question, user_flake, datetime.now(),
-                        datetime.now(), message_flake, channel_flake))
+                       (question, user_flake, datetime.utcnow(),
+                        datetime.utcnow(), message_flake, channel_flake))
 
         poll_id = cursor.fetchone()[0]
 
@@ -269,7 +270,7 @@ class PollCog(commands.Cog):
         cursor = self.conn.cursor()
 
         poll_info = sql_request(cursor, requests.get_message_from_id,
-                                (datetime.now(), poll_id))
+                                (datetime.utcnow(), poll_id))
         if not poll_info:
             await send(ctx, errors.poll_not_found, tag=True, expire=True)
 
@@ -451,7 +452,7 @@ class PollCog(commands.Cog):
         cursor = self.conn.cursor()
 
         poll_info = sql_request(cursor, requests.get_message_from_id,
-                                (datetime.now(), poll_id))
+                                (datetime.utcnow(), poll_id))
 
         if not poll_info:
             await send(ctx, errors.poll_not_found, tag=True, expire=True)
@@ -521,6 +522,7 @@ class PollCog(commands.Cog):
         channel = ctx.guild.get_channel(
             self.str_to_snowflake(metadata.channel)
         )
+
         if not channel:
             link = None
         else:
@@ -532,19 +534,39 @@ class PollCog(commands.Cog):
             except discord.NotFound:
                 link = None
 
-        if link:
-            title = style.overview_title_link.format(poll_id, link)
-        else:
-            title = style.overview_title.format(poll_id)
+        title = style.overview_title.format(
+            poll_id,
+            self.snowflake_to_user(ctx.guild, metadata.username))
 
-        embed = discord.Embed(
-            title=title,
-            color=discord.Color.red()
+        if link:
+            embed = discord.Embed(
+                title=title,
+                color=discord.Color.red(),
+                description=style.overview_link.format(link)
+            )
+        else:
+            embed = discord.Embed(
+                title=style.overview_title.format(poll_id),
+                color=discord.Color.red()
+            )
+
+        footer = style.timestamp.format(
+            arrow.get(metadata.time).humanize(),
+            arrow.get(metadata.lastupdate).humanize()
+        )
+
+        embed.set_footer(text=footer)
+
+        embed.add_field(
+            name=style.question_title,
+            value=metadata.question,
+            inline=False
         )
 
         embed.add_field(
-            name=style.readout_title,
-            value=self.get_poll_string(ctx.guild, poll_id)
+            name=style.option_title,
+            value=self.get_option_string(ctx.guild, poll_id),
+            inline=False
         )
 
         await ctx.send(embed=embed)
