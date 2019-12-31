@@ -679,4 +679,3 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
             await send_dm(ctx.author, style.password_succeed)
 
 
-

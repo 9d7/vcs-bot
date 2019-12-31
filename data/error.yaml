@@ -1,0 +1,4 @@
+no-pm: "{} cannot be used in private messages."
+disabled: "{} has been disabled."
+
+error-channel: bot-errors
