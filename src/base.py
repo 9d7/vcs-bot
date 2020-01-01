@@ -24,6 +24,15 @@ RANDOM_COLOR_V = 0.9
 CRITICAL_DATABASE_ISSUE = "Critical Error for SQL call:\n{}"
 
 
+class ArgIsNaN(Exception):
+    pass
+
+class WrongArgLength(Exception):
+    pass
+
+class PageOOB(Exception):
+    pass
+
 # simple wrapper function to turn psycopg2's returns into named tuples.
 # returns a list if single element was requested, otherwise a namedtuple
 def sql_request(cursor, call, args):

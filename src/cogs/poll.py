@@ -9,6 +9,10 @@ MAX_OPTION_LENGTH = 80
 POLLS_PER_PAGE = 10
 
 
+class PollError(Exception):
+    pass
+
+
 class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
 
     def __init__(self, poll_file: str,
@@ -38,11 +42,10 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     def str_to_snowflake(flake: str):
         return int(flake, 16)
 
-
     def get_option_string(self, guild: discord.Guild, poll_id: int):
 
         requests = self.messages.sql_requests
-        style = self.messages.style
+        style = self.messages.style.readout
 
         cursor = self.conn.cursor()
 
@@ -80,8 +83,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
 
     def get_poll_string(self, guild: discord.Guild, poll_id):
 
-        style = self.messages.style
-        errors = self.messages.errors
+        style = self.messages.style.readout
         requests = self.messages.sql_requests
 
         cursor = self.conn.cursor()
@@ -103,7 +105,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
         # join string together :)
         ret = "\n".join([header_string, question_string, option_string])
         if len(ret) >= MAX_TEXT_LENGTH:
-            return errors.poll_overflow
+            return style.poll_overflow
 
         return ret
 
@@ -185,8 +187,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     @delete_source
     async def poll(self, ctx: commands.context):
         if ctx.invoked_subcommand is None:
-            await send(ctx, self.messages.errors.command_not_found,
-                       tag=True, expire=True)
+            raise PollError("command_not_found")
 
     ############################################################################
     # create
@@ -196,28 +197,21 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     @commands.check(non_dm)
     async def create(self, ctx: commands.context, *args):
 
-        errors = self.messages.errors
         requests = self.messages.sql_requests
 
         if len(args) == 0:
-            await send(ctx, errors.wrong_arg_length,
-                       tag=True, expire=True)
-            return
+            raise WrongArgLength("at least one")
 
         question = args[0]
 
         if len(question) > MAX_QUESTION_LENGTH:
-            await send(ctx, errors.question_too_long,
-                       tag=True, expire=True)
-            return
+            raise PollError("question_too_long")
 
         if len(args) > 1:
             if max(len(option) for option in args[1:]) > MAX_OPTION_LENGTH:
-                await send(ctx, errors.options_too_long,
-                           tag=True, expire=True)
-                return
+                raise PollError("options_too_long")
 
-        message = await send(ctx, self.messages.style.loading,
+        message = await send(ctx, self.messages.style.readout.loading,
                              tag=False, expire=False)
 
         message_flake = self.snowflake_to_str(message.id)
@@ -258,45 +252,40 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def append(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
 
         if len(args) < 2:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("two")
 
         try:
             poll_id = int(args[0], 10)
         except ValueError:
-            await send(ctx, errors.id_is_nan, tag=True, expire=True)
-            return
+            raise ArgIsNaN("id")
 
         cursor = self.conn.cursor()
 
         poll_info = sql_request(cursor, requests.get_message_from_id,
                                 (datetime.utcnow(), poll_id))
         if not poll_info:
-            await send(ctx, errors.poll_not_found, tag=True, expire=True)
+            raise PollError("poll_not_found")
 
         poll_info = poll_info[0]
 
         emojis = sql_request(cursor, requests.get_emojis, (poll_id,))
 
         if len(emojis) == 0:
-            await send(ctx, errors.options_not_found, tag=True, expire=True)
-            return
+            raise PollError("options_not_found")
 
         option = " ".join(args[1:])
 
         if len(option) > MAX_OPTION_LENGTH:
-            await send(ctx, errors.option_too_long, tag=True, expire=True)
+            raise PollError("option_too_long")
 
         for possible_emoji in self.messages.emojis:
             if possible_emoji not in emojis:
                 emoji = possible_emoji
                 break
         else:
-            await send(ctx, errors.too_many_options, tag=True, expire=True)
-            return
+            raise PollError("too_many_options")
 
         cursor.execute(self.messages.sql_requests.new_option,
                        (poll_id, False, self.snowflake_to_str(ctx.author.id),
@@ -306,14 +295,12 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
             self.str_to_snowflake(poll_info.channel)
         )
         if not channel:
-            await send(ctx, errors.poll_deleted, tag=True, expire=True)
-            return
+            raise PollError("poll_deleted")
         try:
             message = await ctx.fetch_message(
                 self.str_to_snowflake(poll_info.message))
         except discord.NotFound:
-            await send(ctx, errors.poll_deleted, tag=True, expire=True)
-            return
+            raise PollError("poll_deleted")
 
         await message.edit(content=self.get_poll_string(ctx.guild, poll_id))
         await message.add_reaction(self.str_to_emoji(emoji))
@@ -326,12 +313,10 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def list(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
-        style = self.messages.style
+        style = self.messages.style.list
 
         if len(args) > 1:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("zero or one")
 
         if len(args) == 0:
             page = 1
@@ -339,12 +324,10 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
             try:
                 page = int(args[0], base=10)
             except ValueError:
-                await send(ctx, errors.page_is_nan, tag=True, expire=True)
-                return
+                raise ArgIsNaN("page")
 
         if page < 1:
-            await send(ctx, errors.page_oob, tag=True, expire=True)
-            return
+            raise PageOOB()
 
         cursor = self.conn.cursor()
 
@@ -353,16 +336,14 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
         )[0]
 
         if num_pages == 0:
-            await send(ctx, errors.no_polls_to_list, tag=True, expire=True)
-            return
+            raise PollError("no_polls_to_list")
 
         if page > num_pages:
-            await send(ctx, errors.page_oob, tag=True, expire=True)
-            return
+            raise PageOOB()
 
         poll_summaries = sql_request(cursor,
                                      requests.summary,
-                                     (style.no_votes_summary,
+                                     (style.no_votes,
                                       (page - 1) * POLLS_PER_PAGE,
                                       POLLS_PER_PAGE))
 
@@ -374,11 +355,11 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
 
         embed = discord.Embed(
             color=random_color(),
-            title=style.summary_title,
+            title=style.title,
             description=summaries
         )
 
-        footer = style.summary_footer.format(page, int(num_pages))
+        footer = style.footer.format(page, int(num_pages))
 
         embed.set_footer(text=footer)
 
@@ -392,17 +373,14 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def delete(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
 
         if len(args) != 1:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("one")
 
         try:
             poll_id = int(args[0], 10)
         except ValueError:
-            await send(ctx, errors.id_is_nan, tag=True, expire=True)
-            return
+            raise ArgIsNaN("id")
 
         cursor = self.conn.cursor()
 
@@ -410,12 +388,12 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
                                 (poll_id,))
 
         if not poll_info:
-            await send(ctx, errors.poll_not_found, tag=True, expire=True)
-            return
+            raise PollError("poll_not_found")
+
         poll_info = poll_info[0]
 
         if self.snowflake_to_str(ctx.author.id) != poll_info.username:
-            await send(ctx, errors.not_author, tag=True, expire=True)
+            raise PollError("not_author")
 
         # delete old poll if it exists
         channel = ctx.guild.get_channel(
@@ -442,17 +420,14 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def revive(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
 
         if len(args) != 1:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("one")
 
         try:
             poll_id = int(args[0], 10)
         except ValueError:
-            await send(ctx, errors.id_is_nan, tag=True, expire=True)
-            return
+            raise ArgIsNaN("id")
 
         cursor = self.conn.cursor()
 
@@ -460,8 +435,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
                                 (datetime.utcnow(), poll_id))
 
         if not poll_info:
-            await send(ctx, errors.poll_not_found, tag=True, expire=True)
-            return
+            raise PollError("poll_not_found")
         poll_info = poll_info[0]
 
         # delete old poll if it exists
@@ -478,7 +452,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
                 pass
 
         # new message
-        message = await send(ctx, self.messages.style.loading,
+        message = await send(ctx, self.messages.style.readout.loading,
                              tag=False, expire=False)
 
         cursor.execute(requests.move_poll,
@@ -502,26 +476,22 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def view(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
-        style = self.messages.style
+        style = self.messages.style.view
 
         if len(args) != 1:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("one")
 
         try:
             poll_id = int(args[0], 10)
         except ValueError:
-            await send(ctx, errors.id_is_nan, tag=True, expire=True)
-            return
+            raise ArgIsNaN("id")
 
         cursor = self.conn.cursor()
 
         metadata = sql_request(cursor, requests.poll_metadata, (poll_id,))
 
         if not metadata:
-            await send(ctx, errors.poll_not_found, tag=True, expire=True)
-            return
+            raise PollError("poll_not_found")
         metadata = metadata[0]
 
         channel = ctx.guild.get_channel(
@@ -585,17 +555,14 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     async def purge(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
-        errors = self.messages.errors
 
         if len(args) not in [1, 2]:
-            await send(ctx, errors.wrong_arg_length, tag=True, expire=True)
-            return
+            raise WrongArgLength("one or two")
 
         try:
             poll_id = int(args[0], 10)
         except ValueError:
-            await send(ctx, errors.id_is_nan, tag=True, expire=True)
-            return
+            raise ArgIsNaN("id")
 
         cursor = self.conn.cursor()
 
@@ -605,8 +572,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
                                 requests.get_message_from_id,
                                 (datetime.utcnow(), poll_id))
         if not poll_info:
-            await send(ctx, errors.poll_not_found, tag=True, expire=True)
-            return
+            raise PollError("poll_not_found")
         poll_info = poll_info[0]
 
         # get old poll message if it exists
@@ -660,7 +626,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     @poll.command()
     async def reset(self, ctx: commands.context, *args):
 
-        style = self.messages.style
+        style = self.messages.style.password
 
         await send_dm(ctx.author, style.password_enter)
         channel = ctx.author.dm_channel
@@ -677,5 +643,3 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
             cursor = self.conn.cursor()
             cursor.execute(self.messages.sql_requests.reset)
             await send_dm(ctx.author, style.password_succeed)
-
-

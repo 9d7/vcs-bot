@@ -16,7 +16,7 @@ def main():
   bot.add_cog(HelpCog('data/help.yaml', bot))
   bot.add_cog(PollCog('data/poll.yaml', conn=conn, bot=bot))
 # uncomment for error handling
-#  bot.add_cog(ErrorCog('data/error.yaml', bot=bot))
+  bot.add_cog(ErrorCog('data/error.yaml', bot=bot))
 
   bot.run(os.environ['DISCORD_KEY'])
 

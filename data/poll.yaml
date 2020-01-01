@@ -10,104 +10,75 @@ default_poll:
     - 0001F44E
 
 emojis:
-  - 0001F1E6
-  - 0001F1E7
-  - 0001F1E8
-  - 0001F1E9
-  - 0001F1EA
-  - 0001F1EB
-  - 0001F1EC
-  - 0001F1ED
-  - 0001F1EE
-  - 0001F1EF
-  - 0001F1F0
-  - 0001F1F1
-  - 0001F1F2
-  - 0001F1F3
-  - 0001F1F4
-  - 0001F1F5
-  - 0001F1F6
-  - 0001F1F7
-  - 0001F1F8
-  - 0001F1F9
+  - "0001F534"
+  - "0001F7E0"
+  - "0001F7E1"
+  - "0001F7E2"
+  - "0001F535"
+  - "0001F7E3"
+  - "0001F7E4"
+  - "00002764"
+  - "0001F9E1"
+  - "0001F49B"
+  - "0001F49A"
+  - "0001F499"
+  - "0001F49C"
+  - "0001F90E"
+  - "0001F7E5"
+  - "0001F7E7"
+  - "0001F7E8"
+  - "0001F7E9"
+  - "0001F7E6"
+  - "0001F7EA"
 
 style:
-  # 1. id
-  # 2. creator
-  poll_header: __**Poll**__ (id \#{}) __**from {}**__
 
-  # 1. question
-  question_string: "**Question**: {}"
+  readout:
+    # 1. id
+    # 2. creator
+    poll_header: __**Poll**__ (id \#{}) __**from {}**__
 
-  # 1. num_votes
-  # 2. "vote"/"votes"
-  # 3. emoji
-  # 4. option
-  # 5. voter names
-  option_string: "`{} {}` {}: *{}* - {}"
+    # 1. question
+    question_string: "**Question**: {}"
 
-  # there's no chance of this ever being i18n-ed, but
-  # the option is still there.
-  vote_singular: "vote "
-  vote_plural: votes
+    # 1. num_votes
+    # 2. "vote"/"votes"
+    # 3. emoji
+    # 4. option
+    # 5. voter names
+    option_string: "`{} {}` {}: *{}* - {}"
 
-  no_votes: "Nobody :("
-  no_votes_summary: "No votes :("
-  summary_title: Poll List
+    # there's no chance of this ever being i18n-ed, but
+    # the option is still there.
+    vote_singular: "vote "
+    vote_plural: votes
 
-  summary_string: "`#{}:`  {} - {}"
-  summary_footer: "Page {} of {}"
+    no_votes: "Nobody :("
 
-  loading: Loading poll...
+    poll_overflow: There's too much to display in this poll. Please use
+      !poll purge to remove some extraneous options.
 
-  overview_title: "Poll #{} (by {})"
-  overview_link: "[Link to Poll]({})"
-  timestamp: "Poll created {} and was last changed {}"
-  created_by: "Created by {}"
+    loading: Loading poll...
 
-  option_title: Options
-  question_title: Question
+  list:
+    no_votes: "No votes :("
+    title: Poll List
 
-  password_enter: Please enter the reset password.
-  password_fail: The reset was unsuccessful.
-  password_succeed: The reset was successful.
+    summary_string: "`#{}:`  {} - {}"
+    footer: "Page {} of {}"
 
+  view:
+    overview_title: "Poll #{} (by {})"
+    overview_link: "[Link to Poll]({})"
+    timestamp: "Poll created {} and was last changed {}"
 
-errors:
-  command_not_found: Poll subcommand invalid.
-    Type !help poll for a list of valid subcommands.
-  wrong_arg_length: You've entered the wrong number of arguments.
-    Type !help poll for help with command syntax.
-  question-too-long: The question you've entered is too long. Please
-    limit your question to 255 characters.
-  options_too_long: One of the options you've entered is too long.
-    Please limit each option to 80 characters.
-  option_too_long: The option you've entered is too long. Please limit
-    your option to 80 characters.
-  # PollID not in database when it *ABSOLUTELY* should be.
-  # separate from an invalid ID error because that's a user error.
-  # this is a "never should happen" server error.
-  poll_not_found_critical: Poll not found in database. Tell Eric.
+    option_title: Options
+    question_title: Question
 
-  poll_not_found: Invalid ID. Use !poll view to see the poll ID of recent polls.
-
-  options_not_found: Options not found in database. Tell Eric.
-
-  too_many_options: The poll has too many options. Please remove some with
-    !poll purge before continuing.
-  poll_overflow: There's too much to display in this poll. Please use
-    !poll purge to remove some extraneous options.
-  id_is_nan: <id> should be a number. Use !help poll for help with command
-    syntax.
-  page_is_nan: <page> should be a number. Use !help poll for help with command
-    syntax.
-  no_polls_to_list: There are currently no polls.
-    Create a poll with !poll create.
-  page_oob: The page you requested is out of bounds.
-
-  poll_deleted: The message or channel containing the poll was deleted. Please
-    revive the poll with !poll revive <id>.
-  not_author: You don't own that poll!
+  password:
+    password_enter: Please enter the reset password.
+    password_fail: The reset was unsuccessful.
+    password_succeed: The reset was successful.
 
 
 sql_requests:

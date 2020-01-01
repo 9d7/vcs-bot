@@ -2,3 +2,38 @@ no-pm: "{} cannot be used in private messages."
 disabled: "{} has been disabled."
 
 error-channel: bot-errors
+
+
+wrong_arg_length: >
+  {} takes {} argument(s). Please use !help for help with command syntax.
+arg_is_nan: >
+  <{}> should be a number. Please use !help for help with command syntax.
+page_oob:
+  The page you requested is out of bounds.
+
+poll:
+  command_not_found: Poll subcommand invalid.
+    Type !help poll for a list of valid subcommands.
+  question_too_long: The question you've entered is too long. Please
+    limit your question to 255 characters.
+  options_too_long: One of the options you've entered is too long.
+    Please limit each option to 80 characters.
+  option_too_long: The option you've entered is too long. Please limit
+    your option to 80 characters.
+  # PollID not in database when it *ABSOLUTELY* should be.
+  # separate from an invalid ID error because that's a user error.
+  # this is a "never should happen" server error.
+  poll_not_found_critical: Poll not found in database. Tell Eric.
+
+  poll_not_found: Invalid ID. Use !poll view to see the poll ID of recent polls.
+
+  options_not_found: Options not found in database. Tell Eric.
+
+  too_many_options: The poll has too many options. Please remove some with
+    !poll purge before continuing.
+  no_polls_to_list: There are currently no polls.
+    Create a poll with !poll create.
+
+  poll_deleted: The message or channel containing the poll was deleted. Please
+    revive the poll with !poll revive <id>.
+  not_author: You don't own that poll!
