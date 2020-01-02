@@ -60,8 +60,6 @@ class ErrorCog(commands.Cog):
                                   tag=True, expire=True)
         except Exception:
             pass
-        print(PollError)
-        print(type(error))
 
         exception_string = ctx.author.mention + "\n```" + \
                            "".join(traceback.format_exception(

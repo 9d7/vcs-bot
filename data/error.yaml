@@ -37,3 +37,7 @@ poll:
   poll_deleted: The message or channel containing the poll was deleted. Please
     revive the poll with !poll revive <id>.
   not_author: You don't own that poll!
+
+role:
+  command_not_found: Role subcommand invalid.
+    Type !help role for a list of valid subcommands.

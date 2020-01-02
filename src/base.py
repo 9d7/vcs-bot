@@ -74,7 +74,6 @@ async def send(ctx, message: str, tag: bool, expire: bool):
 
 def random_color():
     h = random.uniform(0, 1)
-    print(h)
     return discord.Color.from_hsv(h, RANDOM_COLOR_S, RANDOM_COLOR_V)
 
 
