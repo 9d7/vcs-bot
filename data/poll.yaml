@@ -60,6 +60,12 @@ style:
 
     loading: Loading poll...
 
+  delete:
+    success: "Poll {} deleted."
+
+  purge:
+    success: "{} option(s) deleted from poll {}."
+
   list:
     no_votes: "No votes :("
     title: Poll List

@@ -412,6 +412,9 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
         cursor.execute(requests.delete_poll,
                        (poll_id, poll_id, poll_id))
 
+        await send(ctx, self.messages.style.delete.success.format(poll_id),
+                   tag=True, expire=True)
+
     ############################################################################
     # revive
     ############################################################################
@@ -623,6 +626,10 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
                 content=self.get_poll_string(ctx.guild, poll_id)
 
             )
+
+        await send(ctx, self.messages.style.purge.success.format(
+            len(emojis), poll_id
+        ), tag=True, expire=True)
 
     @poll.command()
     async def reset(self, ctx: commands.context, *args):

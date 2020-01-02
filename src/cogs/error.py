@@ -4,6 +4,7 @@ import sys
 import traceback
 from src.base import *
 from src.cogs.poll import PollError
+from src.cogs.role import RoleError
 import box
 
 
@@ -57,6 +58,10 @@ class ErrorCog(commands.Cog):
             elif isinstance(error, PollError):
                 return await send(ctx,
                                   self.messages.poll[error.args[0]],
+                                  tag=True, expire=True)
+            elif isinstance(error, RoleError):
+                return await send(ctx,
+                                  self.messages.role[error.args[0]],
                                   tag=True, expire=True)
         except Exception:
             pass

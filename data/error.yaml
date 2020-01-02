@@ -41,3 +41,6 @@ poll:
 role:
   command_not_found: Role subcommand invalid.
     Type !help role for a list of valid subcommands.
+  role_too_short: That role name is too short.
+  role_too_long: That role name is too long.
+  role_exists: That role already exists!

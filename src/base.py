@@ -36,6 +36,19 @@ class PageOOB(Exception):
 # simple wrapper function to turn psycopg2's returns into named tuples.
 # returns a list if single element was requested, otherwise a namedtuple
 def sql_request(cursor, call, args):
+    """
+    Wraps a psycopg2 sql request to make it a bit more human-readable.
+    Normally, psycopg2 returns a list of tuples, where the column names
+    can be accessed through cursor.description. That is a little unwieldy,
+    so this function instead returns a list of namedtuples (from collections)
+    where each index in the tuple is annotated with its matching row name.
+
+    :param cursor: the psycopg2 cursor instance to request from.
+    :param call: the sql to call.
+    :param args: the list of arguments to be passed to the sql request.
+    :return: a list of named tuples. if the sql response is one column wide,
+    a simple list is returned.
+    """
     cursor.execute(call, args)
 
     desc = [field.name for field in cursor.description]
@@ -52,7 +65,6 @@ def sql_request(cursor, call, args):
     return [Named(*i) for i in reply]
 
 
-# a
 def delete_source(f):
     @wraps(f)
     async def wrapper(*args, **kwds):
