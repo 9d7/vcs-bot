@@ -53,3 +53,8 @@ role:
   author_not_in_role: You are not in that role.
   user_not_in_role: That user is not in that role.
   no_roles: There are currently no roles. Create one with !role create.
+
+nick:
+  too_long: That nickname is too long.
+  too_short: That nickname is too short.
+  forbidden: There was a problem changing that nickname (lack of permissions?)

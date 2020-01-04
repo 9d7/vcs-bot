@@ -3,6 +3,8 @@ from src.cogs.help import HelpCog
 from src.cogs.poll import PollCog
 from src.cogs.error import ErrorCog
 from src.cogs.role import RoleCog
+from src.cogs.nick import NickCog
+
 import psycopg2
 import os
 def main():
@@ -16,7 +18,7 @@ def main():
 
   bot.add_cog(HelpCog('data/help.yaml', bot=bot))
   bot.add_cog(PollCog('data/poll.yaml', conn=conn, bot=bot))
-# uncomment for error handling
+  bot.add_cog(NickCog('data/nick.yaml', bot=bot))
   bot.add_cog(RoleCog('data/role.yaml', bot=bot))
   bot.add_cog(ErrorCog('data/error.yaml', bot=bot))
 

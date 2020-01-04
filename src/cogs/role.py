@@ -1,8 +1,7 @@
-import discord, os, asyncio
+import discord
+from discord.ext import commands
 from src.base import *
-from datetime import datetime
 import box
-import arrow
 
 
 class RoleError(Exception):
@@ -20,7 +19,7 @@ class RoleCog(commands.Cog):
         with open(role_file, 'r') as msg_file:
             self.messages = box.Box.from_yaml(msg_file)
 
-    @commands.group()
+    @commands.group(aliases=['roles'])
     @commands.check(non_dm)
     @delete_source
     async def role(self, ctx: commands.context):
@@ -198,4 +197,3 @@ class RoleCog(commands.Cog):
         await role.delete()
         await send(ctx, self.messages.delete.success.format(name),
                    tag=True, expire=True)
-

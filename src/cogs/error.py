@@ -5,6 +5,7 @@ import traceback
 from src.base import *
 from src.cogs.poll import PollError
 from src.cogs.role import RoleError
+from src.cogs.nick import NickError
 import box
 
 
@@ -58,7 +59,7 @@ class ErrorCog(commands.Cog):
             elif isinstance(error, UserNotFound):
                 return await send(ctx,
                                   self.messages.user_not_found.format(
-                                      ctx.command, error.args[0]
+                                      error.args[0]
                                   ), tag=True, expire=True)
 
             elif isinstance(error, PollError):
@@ -68,6 +69,10 @@ class ErrorCog(commands.Cog):
             elif isinstance(error, RoleError):
                 return await send(ctx,
                                   self.messages.role[error.args[0]],
+                                  tag=True, expire=True)
+            elif isinstance(error, NickError):
+                return await send(ctx,
+                                  self.messages.nick[error.args[0]],
                                   tag=True, expire=True)
 
         except Exception:

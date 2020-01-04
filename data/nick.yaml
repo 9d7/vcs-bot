@@ -1,0 +1,3 @@
+reset: You reset your nick.
+self_change: You set your nick to {}.
+other_change: "{} Your nick has been set to {} by {}."
