@@ -15,6 +15,7 @@ leave:
 
 list:
   title: Roles
+  format_string: "**{}** - {}"
 
 delete:
   success: Role {} deleted.

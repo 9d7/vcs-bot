@@ -168,7 +168,13 @@ class RoleCog(commands.Cog):
 
     @role.command()
     async def list(self, ctx: commands.context, *args):
-        all_roles = [role.name for role in self.get_roles(ctx.guild)]
+        all_roles = []
+        for role in self.get_roles(ctx.guild):
+            members = [member.display_name for member in role.members]
+            string = self.messages.list.format_string
+            string = string.format(role.name, ", ".join(members))
+            all_roles.append(string)
+
 
         if len(all_roles) == 0:
             raise RoleError("no_roles")
@@ -176,7 +182,7 @@ class RoleCog(commands.Cog):
         embed = discord.Embed(
             color=random_color(),
             title=self.messages.list.title,
-            description=", ".join(all_roles)
+            description="\n".join(all_roles)
         )
 
         await ctx.send(embed=embed)
