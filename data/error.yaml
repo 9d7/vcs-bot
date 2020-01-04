@@ -77,3 +77,4 @@ parrot:
   parrot_not_found: The parrot you've requested does not exist.
   alias_too_short: That alias is too short.
   alias_too_long: That alias is too long.
+  response_not_found: That response could not be found.

@@ -289,7 +289,46 @@ class ParrotCog(commands.Cog):
 
     @response.command(name='delete', aliases=['remove'])
     async def response_remove(self, ctx: commands.context, *args):
-        pass
+
+        if len(args) != 2:
+            raise WrongArgLength("two")
+
+        parrot_id = self.get_parrot(args[0])
+
+        requests = self.messages.sql_requests
+        style = self.messages.style.response_remove
+
+        response = args[1].lower()
+
+        cursor = self.conn.cursor()
+
+        deleted = sql_request(cursor,
+                              requests.delete_response,
+                              (response + "%", parrot_id, parrot_id))
+
+        if len(deleted) == 0:
+            raise ParrotError("response_not_found")
+
+        deleted = deleted[0]
+
+        num_responses = sql_request(cursor,
+                                    requests.num_responses,
+                                    (parrot_id,))[0]
+        if num_responses == 0:
+            cursor.execute(
+                requests.delete_parrot,
+                (parrot_id,) * 3
+            )
+            await send(ctx, style.parrot_deleted.format(deleted),
+                       tag=True, expire=True)
+            return
+
+        await send(ctx, style.success.format(deleted), tag=True,
+                   expire=True)
+
+
+
+
 
     @parrot.command()
     async def reset(self, ctx: commands.context, *args):

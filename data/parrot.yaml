@@ -15,6 +15,10 @@ style:
     disable: Parrots have been disabled.
   response_add:
     success: The response "{}" has been added.
+  response_remove:
+    success: The response "{}" has been removed.
+    parrot_deleted: The response "{}" and its corresponding parrot have been
+      removed.
   view:
     title: Parrot info for `{}`
     alias_title: Aliases
@@ -35,6 +39,16 @@ sql_requests:
       WHERE Trigger
       LIKE %s ESCAPE '';
 
+  delete_response: |
+    DELETE FROM Responses
+    WHERE Response IN (
+      SELECT Response FROM Responses WHERE
+      LOWER(Response) LIKE %s AND ParrotID=%s
+      ORDER BY CHAR_LENGTH(Response) ASC
+      LIMIT 1
+    ) AND ParrotID=%s
+    RETURNING Response;
+
   delete_alias: |
     DELETE FROM Triggers WHERE Trigger=%s AND ParrotID=%s;
 
@@ -51,6 +65,10 @@ sql_requests:
     DELETE FROM Triggers WHERE ParrotID=%s;
     DELETE FROM Responses WHERE ParrotID=%s;
     DELETE FROM Parrots WHERE ParrotID=%s;
+
+  num_responses: |
+    SELECT COUNT(*) FROM Responses
+    WHERE ParrotID=%s;
 
   get_matching_triggers: |
     SELECT MAX(ParrotID) AS ParrotID,
