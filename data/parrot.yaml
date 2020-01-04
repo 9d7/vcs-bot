@@ -5,10 +5,19 @@ style:
     password_succeed: The reset was successful.
   create:
     success: The parrot {} has been created.
+  delete:
+    success: The parrot {} has been deleted.
+    success_alias: The alias {} has been deleted.
+  alias:
+    success: The alias {} has been created.
+  toggle:
+    enable: Parrots have been enabled.
+    disable: Parrots have been disabled.
+
 
 sql_requests:
   search_message: |
-    SELECT ParrotID
+    SELECT DISTINCT ParrotID
     FROM Triggers
     WHERE %s
     LIKE '%%' || Trigger || '%%'

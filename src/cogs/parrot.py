@@ -22,13 +22,14 @@ class ParrotCog(commands.Cog):
         self.conn = conn
         with open(parrot_file, 'r') as msg_file:
             self.messages = box.Box.from_yaml(msg_file)
+        self.toggle = True
 
     def get_parrot(self, trigger):
 
         trigger = trigger.lower()
 
-        cursor = self.conn.cursor
-        requests = self.messages.get_id
+        cursor = self.conn.cursor()
+        requests = self.messages.sql_requests
 
         # search for exact match
         parrot_ids = sql_request(cursor,
@@ -52,27 +53,27 @@ class ParrotCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if self.toggle:
+            requests = self.messages.sql_requests
 
-        requests = self.messages.sql_requests
+            if message.author == self.bot.user:
+                return
 
-        if message.author == self.bot.user:
-            return
+            cursor = self.conn.cursor()
 
-        cursor = self.conn.cursor()
+            parrot_ids = sql_request(cursor,
+                                     requests.search_message,
+                                     (message.content.lower(),))
 
-        parrot_ids = sql_request(cursor,
-                                 requests.search_message,
-                                 (message.content.lower(),))
+            for parrot_id in parrot_ids:
+                response = sql_request(cursor,
+                                       requests.random_response,
+                                       (parrot_id,))
+                if not response:
+                    continue
+                response = response[0]
 
-        for parrot_id in parrot_ids:
-            response = sql_request(cursor,
-                                   requests.random_response,
-                                   (parrot_id,))
-            if not response:
-                continue
-            response = response[0]
-
-            await message.channel.send(content=response)
+                await message.channel.send(content=response)
 
     @commands.group()
     @commands.check(non_dm)
@@ -85,11 +86,12 @@ class ParrotCog(commands.Cog):
     async def create(self, ctx: commands.context, *args):
 
         requests = self.messages.sql_requests
+        style = self.messages.style.create
 
         if len(args) < 2:
             raise WrongArgLength("at least two")
 
-        trigger = args[0]
+        trigger = args[0].lower()
         responses = args[1:]
 
         if len(trigger) < MIN_TRIGGER_LEN:
@@ -105,7 +107,7 @@ class ParrotCog(commands.Cog):
         # check for existing ID
         parrot_id = sql_request(cursor,
                                 requests.get_id,
-                                (trigger.lower(),))
+                                (trigger,))
 
         if parrot_id:
             raise ParrotError("parrot_exists")
@@ -113,13 +115,13 @@ class ParrotCog(commands.Cog):
         parrot_id = sql_request(cursor, requests.new_parrot, ())[0]
 
         cursor.execute(requests.insert_trigger,
-                       (parrot_id, trigger.lower(), False))
+                       (parrot_id, trigger, False))
 
         for response in responses:
             cursor.execute(requests.insert_response,
                            (parrot_id, response))
 
-        await send(ctx, self.messages.style.create.success.format(trigger),
+        await send(ctx, style.success.format(trigger),
                    tag=True, expire=True)
 
     @parrot.command(aliases=['remove'])
@@ -130,6 +132,7 @@ class ParrotCog(commands.Cog):
 
         cursor = self.conn.cursor()
         requests = self.messages.sql_requests
+        style = self.messages.style.delete
 
         triggers = sql_request(cursor,
                                requests.get_matching_triggers,
@@ -149,23 +152,70 @@ class ParrotCog(commands.Cog):
         if triggers.alias:
             cursor.execute(requests.delete_alias,
                            (triggers.trigger, triggers.parrotid))
+            await send(
+                ctx,
+                style.success_alias.format(triggers.trigger),
+                tag=True, expire=True)
         else:
             cursor.execute(requests.delete_parrot,
                            (triggers.parrotid,) * 3)
+            await send(
+                ctx,
+                style.success.format(triggers.trigger),
+                tag=True, expire=True)
+
 
     @parrot.command()
     async def view(self, ctx: commands.context, *args):
 
-        
+
         pass
 
     @parrot.command()
     async def alias(self, ctx: commands.context, *args):
-        pass
+
+        requests = self.messages.sql_requests
+        style = self.messages.style.alias
+
+        if len(args) != 2:
+            raise WrongArgLength("two")
+
+        parrot_id = self.get_parrot(args[0])
+
+        alias = args[1].lower()
+        if len(alias) < MIN_TRIGGER_LEN:
+            raise ParrotError("alias_too_short")
+        if len(alias) > MAX_TRIGGER_LEN:
+            raise ParrotError("alias_too_long")
+
+        cursor = self.conn.cursor()
+
+        # check that there are no other exact matches for that alias,
+        # since multiple exact aliases leads to ambiguity
+        matching_triggers = sql_request(cursor,
+                                        requests.get_matching_triggers,
+                                        (alias,))[0]
+        if matching_triggers.nummatches > 0:
+            raise ParrotError("alias_exists")
+
+        cursor.execute(requests.insert_trigger, (parrot_id, alias, True))
+        await send(ctx,
+                   style.success.format(alias),
+                   tag=True, expire=True)
+
 
     @parrot.command()
     async def toggle(self, ctx: commands.context, *args):
-        pass
+        self.toggle = not self.toggle
+        style = self.messages.style.toggle
+        if self.toggle:
+            await send(ctx,
+                       style.enable,
+                       tag=True, expire=True)
+        else:
+            await send(ctx,
+                       style.disable,
+                       tag=True, expire=True)
 
     @parrot.group()
     async def response(self, ctx: commands.context):
