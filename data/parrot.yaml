@@ -13,6 +13,12 @@ style:
   toggle:
     enable: Parrots have been enabled.
     disable: Parrots have been disabled.
+  response_add:
+    success: The response "{}" has been added.
+  view:
+    title: Parrot info for `{}`
+    alias_title: Aliases
+    responses_title: Responses
 
 
 sql_requests:
@@ -31,6 +37,15 @@ sql_requests:
 
   delete_alias: |
     DELETE FROM Triggers WHERE Trigger=%s AND ParrotID=%s;
+
+  get_view: |
+    SELECT
+    (SELECT Trigger FROM Triggers
+     WHERE ParrotID=%s AND Alias=false) AS Trigger,
+    (SELECT STRING_AGG(Trigger, E'\n') FROM Triggers
+     WHERE ParrotID=%s AND Alias=true) AS Aliases,
+    (SELECT STRING_AGG(Response, E'\n') FROM Responses
+     WHERE ParrotID=%s) AS Responses;
 
   delete_parrot: |
     DELETE FROM Triggers WHERE ParrotID=%s;

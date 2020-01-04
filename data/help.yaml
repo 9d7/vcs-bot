@@ -37,11 +37,14 @@ parrot:
       on an alias, the alias will be deleted, but not the whole parrot.
 
   view:
-    brief: Shows information about parrots
-    usage: '[trigger]'
-    description: Shows information about parrots. If trigger is provided,
-      this will show the possible responses for said trigger. Otherwise,
-      this will list all parrots by their triggers.
+    brief: Shows information about a trigger
+    usage: '<trigger>'
+    description: Shows the possible responses and the aliases for the provided
+      trigger.
+
+  list:
+    brief: Lists all triggers
+    description: Lists all triggers.
 
   alias:
     brief: Aliases a parrot

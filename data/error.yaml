@@ -71,6 +71,8 @@ parrot:
   trigger_too_long: That trigger is too long.
   responses_too_long: One of your responses is too long. Please limit responses
     to 255 characters.
+  response_too_long: Your response is too long. Please limit responses
+    to 255 characters.
   multiple_parrots: Multiple parrots were found matching that description.
   parrot_not_found: The parrot you've requested does not exist.
   alias_too_short: That alias is too short.

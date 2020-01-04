@@ -53,27 +53,35 @@ class ParrotCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if self.toggle:
-            requests = self.messages.sql_requests
 
-            if message.author == self.bot.user:
-                return
+        if message.channel.type != discord.ChannelType.text:
+            return
+        if not self.toggle:
+            return
+        if message.author == self.bot.user:
+            return
 
-            cursor = self.conn.cursor()
+        ctx = await self.bot.get_context(message)
+        if ctx.valid:
+            return
 
-            parrot_ids = sql_request(cursor,
-                                     requests.search_message,
-                                     (message.content.lower(),))
+        requests = self.messages.sql_requests
 
-            for parrot_id in parrot_ids:
-                response = sql_request(cursor,
-                                       requests.random_response,
-                                       (parrot_id,))
-                if not response:
-                    continue
-                response = response[0]
+        cursor = self.conn.cursor()
 
-                await message.channel.send(content=response)
+        parrot_ids = sql_request(cursor,
+                                 requests.search_message,
+                                 (message.content.lower(),))
+
+        for parrot_id in parrot_ids:
+            response = sql_request(cursor,
+                                   requests.random_response,
+                                   (parrot_id,))
+            if not response:
+                continue
+            response = response[0]
+
+            await message.channel.send(content=response)
 
     @commands.group()
     @commands.check(non_dm)
@@ -164,12 +172,45 @@ class ParrotCog(commands.Cog):
                 style.success.format(triggers.trigger),
                 tag=True, expire=True)
 
-
     @parrot.command()
     async def view(self, ctx: commands.context, *args):
 
+        if len(args) != 1:
+            raise WrongArgLength("one")
 
-        pass
+        requests = self.messages.sql_requests
+        style = self.messages.style.view
+
+        parrot_id = self.get_parrot(args[0])
+
+        cursor = self.conn.cursor()
+        view_params = sql_request(cursor, requests.get_view, (parrot_id,) * 3)
+
+        if len(view_params) == 0:
+            raise ParrotError("parrot_not_found")
+        elif len(view_params) > 1:
+            raise ParrotError("multiple_parrots")
+
+        view_params = view_params[0]
+
+        embed = discord.Embed(
+            color=random_color(),
+            title=style.title.format(view_params.trigger)
+        )
+
+        if view_params.aliases:
+            embed.add_field(name=style.alias_title,
+                            value=view_params.aliases,
+                            inline=False)
+
+        embed.add_field(name=style.responses_title,
+                        value=view_params.responses,
+                        inline=False)
+
+        await ctx.send(embed=embed)
+
+
+
 
     @parrot.command()
     async def alias(self, ctx: commands.context, *args):
@@ -203,7 +244,6 @@ class ParrotCog(commands.Cog):
                    style.success.format(alias),
                    tag=True, expire=True)
 
-
     @parrot.command()
     async def toggle(self, ctx: commands.context, *args):
         self.toggle = not self.toggle
@@ -224,7 +264,28 @@ class ParrotCog(commands.Cog):
 
     @response.command(name='add', aliases=['create'])
     async def response_add(self, ctx: commands.context, *args):
-        pass
+
+        if len(args) != 2:
+            raise WrongArgLength("two")
+
+        if len(args[1]) > MAX_RESPONSE_LEN:
+            raise ParrotError("response_too_long")
+
+        requests = self.messages.sql_requests
+        style = self.messages.style.response_add
+
+        parrot_id = self.get_parrot(args[0])
+
+        cursor = self.conn.cursor()
+
+        cursor.execute(requests.insert_response,
+                       (parrot_id, args[1]))
+
+        await send(ctx,
+                   style.success.format(args[1]),
+                   tag=True, expire=True)
+
+
 
     @response.command(name='delete', aliases=['remove'])
     async def response_remove(self, ctx: commands.context, *args):
