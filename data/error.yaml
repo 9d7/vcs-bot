@@ -62,3 +62,13 @@ nick:
 color:
   invalid_color: That is not a valid color.
 
+parrot:
+  command_not_found: Parrot subcommand invalid.
+    Type !help parrot for a list of valid subcommands.
+  parrot_exists: That parrot already exists.
+  trigger_too_short: That trigger is too short.
+  trigger_too_long: That trigger is too long.
+  responses_too_long: One of your responses is too long. Please limit responses
+    to 255 characters.
+  multiple_parrots: Multiple parrots were found matching that description.
+  parrot_not_found: The parrot you've requested does not exist.

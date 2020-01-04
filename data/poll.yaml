@@ -255,7 +255,6 @@ sql_requests:
     WHERE PollID=%s;
 
   delete_poll: |
-    DELETE FROM Polls WHERE PollID=%s;
     DELETE FROM Votes AS V
     WHERE V.OptionID IN (
         SELECT OptionID
@@ -263,6 +262,7 @@ sql_requests:
         WHERE O.PollID=%s
     );
     DELETE FROM Options WHERE PollID=%s;
+    DELETE FROM Polls WHERE PollID=%s;
 
   poll_metadata: |
     SELECT Question, LastUpdate, Time, Username, Message, Channel

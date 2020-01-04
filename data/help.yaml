@@ -28,8 +28,7 @@ parrot:
   create:
     brief: Adds a new parrot to the list
     usage: <trigger> <response1> [response2]...
-    description: Appends to the parrot with trigger <trigger>. If no parrot
-      with that trigger is found, a new parrot is created with those responses.
+    description: Creates a new parrot with the given trigger and responses.
 
   delete:
     brief: Deletes a parrot
