@@ -23,9 +23,18 @@ style:
     title: Parrot info for `{}`
     alias_title: Aliases
     responses_title: Responses
+  list:
+    title: Parrots
+    footer_on: Parrots are currently turned on. To turn them off, use
+      !parrot toggle.
+    footer_off: Parrots are currently turned off. To turn them on, use
+      !parrot toggle.
 
 
 sql_requests:
+  all_parrots: |
+    SELECT Trigger FROM Triggers WHERE Alias=false;
+
   search_message: |
     SELECT DISTINCT ParrotID
     FROM Triggers

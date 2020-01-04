@@ -209,8 +209,30 @@ class ParrotCog(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @parrot.command()
+    async def list(self, ctx: commands.context, *args):
 
+        requests = self.messages.sql_requests
+        style = self.messages.style.list
+        cursor = self.conn.cursor()
 
+        parrots = sql_request(cursor, requests.all_parrots, ())
+
+        if not parrots:
+            raise ParrotError("no_parrots")
+
+        embed = discord.Embed(
+            color=random_color(),
+            title=style.title,
+            description="\n".join(parrots)
+        )
+
+        if self.toggle:
+            embed.set_footer(text=style.footer_on)
+        else:
+            embed.set_footer(text=style.footer_off)
+
+        await ctx.send(embed=embed)
 
     @parrot.command()
     async def alias(self, ctx: commands.context, *args):
@@ -285,8 +307,6 @@ class ParrotCog(commands.Cog):
                    style.success.format(args[1]),
                    tag=True, expire=True)
 
-
-
     @response.command(name='delete', aliases=['remove'])
     async def response_remove(self, ctx: commands.context, *args):
 
@@ -325,10 +345,6 @@ class ParrotCog(commands.Cog):
 
         await send(ctx, style.success.format(deleted), tag=True,
                    expire=True)
-
-
-
-
 
     @parrot.command()
     async def reset(self, ctx: commands.context, *args):

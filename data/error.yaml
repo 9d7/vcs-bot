@@ -78,3 +78,5 @@ parrot:
   alias_too_short: That alias is too short.
   alias_too_long: That alias is too long.
   response_not_found: That response could not be found.
+  no_parrots: There are currently no parrots. To create a parrot, use
+    !parrot create.
