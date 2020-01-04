@@ -4,6 +4,7 @@ from src.cogs.poll import PollCog
 from src.cogs.error import ErrorCog
 from src.cogs.role import RoleCog
 from src.cogs.nick import NickCog
+from src.cogs.color import ColorCog
 
 import psycopg2
 import os
@@ -20,6 +21,7 @@ def main():
   bot.add_cog(PollCog('data/poll.yaml', conn=conn, bot=bot))
   bot.add_cog(NickCog('data/nick.yaml', bot=bot))
   bot.add_cog(RoleCog('data/role.yaml', bot=bot))
+  bot.add_cog(ColorCog('data/color.yaml', bot=bot))
   bot.add_cog(ErrorCog('data/error.yaml', bot=bot))
 
   bot.run(os.environ['DISCORD_KEY'])

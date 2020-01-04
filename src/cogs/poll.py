@@ -10,8 +10,10 @@ MAX_OPTION_LENGTH = 80
 POLLS_PER_PAGE = 10
 
 
-class PollError(Exception):
-    pass
+class PollError(CommandError):
+    def __init__(self, message):
+        super().__init__("poll")
+        self.message = message
 
 
 class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):

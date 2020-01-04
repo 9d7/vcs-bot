@@ -58,3 +58,6 @@ nick:
   too_long: That nickname is too long.
   too_short: That nickname is too short.
   forbidden: There was a problem changing that nickname (lack of permissions?)
+
+color:
+  invalid_color: That is not a valid color.

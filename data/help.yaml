@@ -176,7 +176,7 @@ role:
 color:
   brief: Sets your color
   description: Sets the color of your name. Hex values or default color names
-    are allowed.
+    are allowed. For a list of default color names, use !color list.
   usage:
     - <color name>
     - '#RRGGBB'

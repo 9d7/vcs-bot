@@ -4,8 +4,11 @@ from src.base import *
 import box
 from typing import Optional
 
-class NickError(Exception):
-    pass
+class NickError(CommandError):
+    def __init__(self, message):
+        super().__init__("nick")
+        self.message = message
+
 
 MAX_NICK_LEN = 32
 MIN_NICK_LEN = 3

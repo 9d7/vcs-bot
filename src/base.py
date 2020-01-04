@@ -38,6 +38,10 @@ class PageOOB(Exception):
 class UserNotFound(Exception):
     pass
 
+class CommandError(Exception):
+    def __init__(self, command):
+     self.command = command
+
 # simple wrapper function to turn psycopg2's returns into named tuples.
 # returns a list if single element was requested, otherwise a namedtuple
 def sql_request(cursor, call, args):

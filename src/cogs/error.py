@@ -61,18 +61,9 @@ class ErrorCog(commands.Cog):
                                   self.messages.user_not_found.format(
                                       error.args[0]
                                   ), tag=True, expire=True)
-
-            elif isinstance(error, PollError):
+            elif isinstance(error, CommandError):
                 return await send(ctx,
-                                  self.messages.poll[error.args[0]],
-                                  tag=True, expire=True)
-            elif isinstance(error, RoleError):
-                return await send(ctx,
-                                  self.messages.role[error.args[0]],
-                                  tag=True, expire=True)
-            elif isinstance(error, NickError):
-                return await send(ctx,
-                                  self.messages.nick[error.args[0]],
+                                  self.messages[error.command][error.args[0]],
                                   tag=True, expire=True)
 
         except Exception:

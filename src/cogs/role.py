@@ -4,8 +4,11 @@ from src.base import *
 import box
 
 
-class RoleError(Exception):
-    pass
+class RoleError(CommandError):
+    def __init__(self, message):
+        super().__init__("role")
+        self.message = message
+
 
 
 MIN_ROLE_LEN = 3
