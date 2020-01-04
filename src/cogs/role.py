@@ -190,7 +190,7 @@ class RoleCog(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @role.command()
+    @role.command(aliases=['remove'])
     async def delete(self, ctx: commands.context, *args):
         if len(args) != 1:
             raise WrongArgLength("one")

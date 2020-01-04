@@ -371,7 +371,7 @@ class PollCog(commands.Cog, command_attrs=dict(no_pm=True)):
     ############################################################################
     # remove
     ############################################################################
-    @poll.command()
+    @poll.command(aliases=['remove'])
     @commands.check(non_dm)
     async def delete(self, ctx: commands.context, *args):
 
