@@ -1,10 +1,3 @@
-from discord.ext import commands
-import discord
-from functools import wraps
-import psycopg2
-from collections import namedtuple
-import random
-
 """
 A set of functions that get called often from multiple modules.
 sql_request - wraps psycopg2's cursor.execute to make it usable with
@@ -13,6 +6,15 @@ delete_source - a decorator to delete the message that calls a command.
 send - small wrapper for ctx.send that keeps deletion and tagging consistent.
 random_color - generates a random bright color for embeds.
 """
+
+from discord.ext import commands
+import discord
+from functools import wraps
+import psycopg2
+from collections import namedtuple
+import random
+
+
 
 USER_DELETE_DELAY = 3
 BOT_DELETE_DELAY = 10
@@ -31,6 +33,9 @@ class WrongArgLength(Exception):
     pass
 
 class PageOOB(Exception):
+    pass
+
+class UserNotFound(Exception):
     pass
 
 # simple wrapper function to turn psycopg2's returns into named tuples.
@@ -66,6 +71,12 @@ def sql_request(cursor, call, args):
 
 
 def delete_source(f):
+    """
+    A simple decorator that deletes the invocation message of a command
+    after the command is executed.
+    :param f: The function to wrap
+    :return: The wrapped function
+    """
     @wraps(f)
     async def wrapper(*args, **kwds):
         await args[1].message.delete(delay=USER_DELETE_DELAY)
@@ -75,6 +86,15 @@ def delete_source(f):
 
 
 async def send(ctx, message: str, tag: bool, expire: bool):
+    """
+    A small wrapper for ctx.send that standardizes tagging the invoker in a
+    message as well as deleting the message after it was sent.
+    :param ctx: The command context
+    :param message: The message to send
+    :param tag: True to tag the author of the command
+    :param expire: True to delete this message after some time
+    :return: The sent message.
+    """
     if tag:
         message = ctx.author.mention + " " + message
 
@@ -85,11 +105,22 @@ async def send(ctx, message: str, tag: bool, expire: bool):
 
 
 def random_color():
+    """
+    Creates a random, saturated color.
+    :return: A random discord.Color.
+    """
     h = random.uniform(0, 1)
     return discord.Color.from_hsv(h, RANDOM_COLOR_S, RANDOM_COLOR_V)
 
 
 async def send_dm(user: discord.User, message: str):
+    """
+    A simple wrapper to send a DM to a user, creating the dm channel if it
+    does not yet exist.
+    :param user: The user to DM
+    :param message: The message to send
+    :return: The message sent
+    """
     if not user.dm_channel:
         await user.create_dm()
 
@@ -97,4 +128,30 @@ async def send_dm(user: discord.User, message: str):
 
 
 async def non_dm(ctx: commands.Context):
+    """
+    A one-line check to ensure that a command is not invoked through
+    DM.
+    :param ctx: the context of the command.
+    :return: True if we are in a standard text channel.
+    """
     return ctx.channel.type == discord.ChannelType.text
+
+def find_user(guild: discord.Guild, name: str):
+    """
+    A small function to find a user in a guild.
+    :param guild: The guild to search
+    :param name: The name to search for
+    :return: The found user, or None if no user was found.
+    """
+    name = name.lower()
+    for member in guild.members:
+        if member.name.lower().startswith(name):
+            return member
+
+    for member in guild.members:
+        if not member.nick:
+            continue
+        if member.nick.lower().startswith(name):
+            return member
+
+    return None

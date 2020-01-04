@@ -31,7 +31,7 @@ parrot:
     description: Appends to the parrot with trigger <trigger>. If no parrot
       with that trigger is found, a new parrot is created with those responses.
 
-  remove:
+  delete:
     brief: Deletes a parrot
     usage: <trigger>
     description: Deletes the parrot with trigger <trigger>. If this is called
@@ -64,7 +64,7 @@ parrot:
       usage: <trigger> <response>
       description: Adds a response.
 
-    remove:
+    delete:
       brief: Removes a response
       usage: <trigger> <response>
       description: Removes a response. If all responses are removed, the parrot
@@ -168,7 +168,7 @@ role:
     brief: Lists all roles
     description: Lists all roles.
 
-  remove:
+  delete:
     brief: Removes a role
     description: Removes a role.
     usage: <role>

@@ -55,6 +55,12 @@ class ErrorCog(commands.Cog):
                                   self.messages.wrong_arg_length.format(
                                       ctx.command, error.args[0]
                                   ), tag=True, expire=True)
+            elif isinstance(error, UserNotFound):
+                return await send(ctx,
+                                  self.messages.user_not_found.format(
+                                      ctx.command, error.args[0]
+                                  ), tag=True, expire=True)
+
             elif isinstance(error, PollError):
                 return await send(ctx,
                                   self.messages.poll[error.args[0]],
@@ -63,6 +69,7 @@ class ErrorCog(commands.Cog):
                 return await send(ctx,
                                   self.messages.role[error.args[0]],
                                   tag=True, expire=True)
+
         except Exception:
             pass
 

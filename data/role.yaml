@@ -1,4 +1,20 @@
-admin_role: Admin
-color_prefix: c#
+reserved_roles:
+  - admin
+  - "@everyone"
+reserved_prefixes:
+  - c#
 
 created: Role {} has been created!
+
+join:
+  author_success: You have been added to role {}.
+  success: "{} You have been added to role {} by {}."
+leave:
+  author_success: You have been removed from role {}.
+  success: "{} You have been removed from role {} by {}."
+
+list:
+  title: Roles
+
+delete:
+  success: Role {} deleted.

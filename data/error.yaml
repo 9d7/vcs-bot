@@ -10,6 +10,8 @@ arg_is_nan: >
   <{}> should be a number. Please use !help for help with command syntax.
 page_oob:
   The page you requested is out of bounds.
+user_not_found:
+  No user named {} exists.
 
 poll:
   command_not_found: Poll subcommand invalid.
@@ -44,3 +46,10 @@ role:
   role_too_short: That role name is too short.
   role_too_long: That role name is too long.
   role_exists: That role already exists!
+  role_reserved: That name is reserved.
+  role_not_found: That role does not exist.
+  author_in_role: You are already in that role.
+  user_in_role: That user is already in that role.
+  author_not_in_role: You are not in that role.
+  user_not_in_role: That user is not in that role.
+  no_roles: There are currently no roles. Create one with !role create.
