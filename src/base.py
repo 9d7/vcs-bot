@@ -38,6 +38,19 @@ class PageOOB(Exception):
 class UserNotFound(Exception):
     pass
 
+
+class Connection(object):
+    def __init__(self, conn_func):
+        self.conn_func = conn_func
+        self.conn = conn_func()
+
+    def cursor(self):
+        try:
+            return self.conn.cursor()
+        except Exception:
+            self.conn = self.conn_func()
+            return self.conn.cursor()
+
 class CommandError(Exception):
     def __init__(self, command):
      self.command = command

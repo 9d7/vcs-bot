@@ -6,6 +6,7 @@ from src.cogs.role import RoleCog
 from src.cogs.nick import NickCog
 from src.cogs.color import ColorCog
 from src.cogs.parrot import ParrotCog
+from src.base import *
 
 import psycopg2
 import os
@@ -13,10 +14,13 @@ def main():
   bot = commands.Bot(command_prefix="!")
   bot.remove_command('help')
 
+  def create_conn():
+    conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
+    conn.set_session(readonly=False, autocommit=True)
+    return conn
 
+  conn = Connection(create_conn)
 
-  conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
-  conn.set_session(readonly=False, autocommit=True)
 
   bot.add_cog(HelpCog('data/help.yaml', bot=bot))
   bot.add_cog(PollCog('data/poll.yaml', conn=conn, bot=bot))
