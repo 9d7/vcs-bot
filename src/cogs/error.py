@@ -3,9 +3,6 @@ from discord.ext import commands
 import sys
 import traceback
 from src.base import *
-from src.cogs.poll import PollError
-from src.cogs.role import RoleError
-from src.cogs.nick import NickError
 import box
 
 

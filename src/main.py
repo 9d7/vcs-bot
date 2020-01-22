@@ -6,10 +6,11 @@ from src.cogs.role import RoleCog
 from src.cogs.nick import NickCog
 from src.cogs.color import ColorCog
 from src.cogs.parrot import ParrotCog
+from src.cogs.math import MathCog
 from src.base import *
-
 import psycopg2
 import os
+
 def main():
   bot = commands.Bot(command_prefix="!")
   bot.remove_command('help')
@@ -29,7 +30,7 @@ def main():
   bot.add_cog(ColorCog('data/color.yaml', bot=bot))
   bot.add_cog(ParrotCog('data/parrot.yaml', conn=conn, bot=bot))
   bot.add_cog(ErrorCog('data/error.yaml', bot=bot))
-
+  bot.add_cog(MathCog('data/math.yaml', bot=bot))
   bot.run(os.environ['DISCORD_KEY'])
 
 

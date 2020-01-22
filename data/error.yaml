@@ -80,3 +80,7 @@ parrot:
   response_not_found: That response could not be found.
   no_parrots: There are currently no parrots. To create a parrot, use
     !parrot create.
+
+math:
+  invalid: The LaTeX you entered is invalid. Please try again.
+  dependencies_missing: There's a problem with the server. Tell Eric.
