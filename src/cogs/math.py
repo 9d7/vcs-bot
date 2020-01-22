@@ -23,15 +23,16 @@ class MathCog(commands.Cog):
     @delete_source
     async def math(self, ctx: commands.context, *, snippet: str):
 
-        await send(ctx, "you've mathed.", tag=True, expire=True)
         photo_id = f"snippet{int(time.time() * 1000)}"
 
         res = tex2png(snippet,
-                      debug=True,
+                      debug=False,
                       density=500,
                       background="Transparent",
                       foreground="rgb 1.0 1.0 1.0",
                       outfile=photo_id,
+                      latex='latex',
+                      dvipng='dvipng'
                       )
 
         if res > 0:
