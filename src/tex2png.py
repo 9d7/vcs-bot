@@ -53,6 +53,7 @@ def tex2png(snippet: str, **kwargs):
     mathsize = kwargs.get('mathsize', 30)
     latex = kwargs.get('latex', '/usr/bin/latex')
     dvipng = kwargs.get('dvipng', '/usr/bin/dvipng')
+    checks = kwargs.get('checks', True)
 
     # delete intermediate files
     def cleanup():
@@ -67,18 +68,19 @@ def tex2png(snippet: str, **kwargs):
     # send output to black hole if not in debug mode.
     pipe = "" if debug else " > /dev/null"
 
-    # check for binaries
-    if not os.path.isfile(latex):
-        print(f"tex2png: LaTeX was not found in '{latex}'. To install "
-              f"LaTex in Ubuntu type in terminal: sudo apt-get install "
-              f"texlive-full")
-        return 1
+    if checks:
+        # check for binaries
+        if not os.path.isfile(latex):
+            print(f"tex2png: LaTeX was not found in '{latex}'. To install "
+                  f"LaTex in Ubuntu type in terminal: sudo apt-get install "
+                  f"texlive-full")
+            return 1
 
-    if not os.path.isfile(dvipng):
-        print(f"tex2png: dvipng was not found in '{dvipng}'. To install "
-              f"dvipng in Ubuntu type in terminal: sudo apt-get install "
-              f"dvipng")
-        return 1
+        if not os.path.isfile(dvipng):
+            print(f"tex2png: dvipng was not found in '{dvipng}'. To install "
+                  f"dvipng in Ubuntu type in terminal: sudo apt-get install "
+                  f"dvipng")
+            return 1
 
     # write tex file
     with open(f"{outfile}.tex", "w") as texfile:

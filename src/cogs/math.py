@@ -31,8 +31,9 @@ class MathCog(commands.Cog):
                       background="Transparent",
                       foreground="rgb 1.0 1.0 1.0",
                       outfile=photo_id,
-                      latex='/app/.apt/usr/bin/latex',
-                      dvipng='/app/.apt/usr/bin/dvipng'
+                      latex='latex',
+                      dvipng='/app/.apt/usr/bin/dvipng',
+                      checks=False
                       )
 
         if res > 0:
