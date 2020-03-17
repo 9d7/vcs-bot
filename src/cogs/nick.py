@@ -11,7 +11,7 @@ class NickError(CommandError):
 
 
 MAX_NICK_LEN = 32
-MIN_NICK_LEN = 3
+MIN_NICK_LEN = 1
 
 class NickCog(commands.Cog):
 
