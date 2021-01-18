@@ -8,11 +8,14 @@ from src.cogs.color import ColorCog
 from src.cogs.parrot import ParrotCog
 from src.cogs.math import MathCog
 from src.base import *
+import discord
 import psycopg2
 import os
 
 def main():
-  bot = commands.Bot(command_prefix="!")
+  intents = discord.Intents.default()
+  intents.members = True
+  bot = commands.Bot(command_prefix="!", intents=intents)
   bot.remove_command('help')
 
   def create_conn():
